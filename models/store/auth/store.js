@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const moment = require("moment-timezone");
 
 const storeSchema = new mongoose.Schema({
   name: { type: String, trim: true }, // user name
@@ -18,7 +19,10 @@ const storeSchema = new mongoose.Schema({
   dateOfBirth: { type: String, default: "" },
   lastLogin: { type: Date, default: null },
   roles: { type: String },
-  created_at:{ type: Date, default: null}
+  created_at: {
+    type: Date,
+    default: () => moment().tz("Asia/Kolkata").toDate(), // Set to Indian Standard Time
+  },
 });
 
 module.exports = mongoose.model("store", storeSchema);

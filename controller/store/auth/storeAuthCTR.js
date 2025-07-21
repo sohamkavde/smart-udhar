@@ -6,8 +6,15 @@ const jwt_secret = process.env.JWT_TOKEN_SECRET;
 
 const moment = require("moment");
 require("moment-timezone");
+ 
+// // Assuming created_at is from DB
+// const createdAt = "2025-07-21T06:53:31.371+00:00";
 
-// We dont need mobile verification now
+// // Format to IST with AM/PM
+// const formattedDate = moment(createdAt)
+//   .tz('Asia/Kolkata')
+//   .format('DD-MM-YYYY hh:mm A');
+//   console.log(formattedDate);
  
 
 // Store Registration

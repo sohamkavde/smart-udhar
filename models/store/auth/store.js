@@ -13,12 +13,11 @@ const storeSchema = new mongoose.Schema({
     lowercase: true,
   }, // will updata from dashboard
   email_otp: { type: String }, // get otp for email
-  is_verified: { type: Boolean, default: false }, //
-  status: { type: String, default: "inactive" },
+  is_verified: { type: Boolean, default: false }, 
   social_id: { type: String, default: "" },
   dateOfBirth: { type: String, default: "" },
   lastLogin: { type: Date, default: null },
-  roles: { type: String },
+  roles: { type: String,default: null},
   created_at: {
     type: Date,
     default: () => moment().tz("Asia/Kolkata").toDate(), // Set to Indian Standard Time

@@ -23,6 +23,14 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(express.json());
 
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error(err);
+    return res.status(400).send({ message: "Malformed JSON in request body" });
+  }
+  next();
+});
+
 
 app.get("/", (req, res) => res.send("Express on Vercel"));
 

@@ -4,18 +4,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const jwt_secret = process.env.JWT_TOKEN_SECRET;
 
-const moment = require("moment");
-require("moment-timezone");
- 
-// // Assuming created_at is from DB
-// const createdAt = "2025-07-21T06:53:31.371+00:00";
+const moment = require("moment-timezone");
 
-// // Format to IST with AM/PM
-// const formattedDate = moment(createdAt)
-//   .tz('Asia/Kolkata')
-//   .format('DD-MM-YYYY hh:mm A');
-//   console.log(formattedDate);
- 
 
 // Store Registration
 const storeRegistration = async (req, res) => {
@@ -38,10 +28,12 @@ const storeRegistration = async (req, res) => {
     const newStore = await new storeModel({
       mobile,
       mobile_otp,
-      roles
+      roles,
     }).save();
 
-    // sendEmailVerificationOTP(req, newStore);
+    // send otp for registration verification
+    // // sendMobiileVerification(otp,newStore);
+ 
 
     return res.status(201).json({
       status: "success",
@@ -57,16 +49,67 @@ const storeRegistration = async (req, res) => {
   }
 };
 
-//Store Verification By mobile OTP
+// Store Verification By mobile OTP
 const storeVerificationByMobileOTP = async (req, res) => {
   try {
-    const { mobile, otp, roles } = req.body;
+    const { mobile, otp } = req.body;
 
-    if (!mobile || !otp || !roles) {
-      return res
-        .status(400)
-        .json({ status: "failed", message: "All fields are required" });
+    if (!mobile || !otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "All fields are required",
+      });
     }
+
+    const mobileStore = await storeModel.findOne({ mobile });
+
+    if (!mobileStore) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Mobile number not registered",
+      });
+    }
+
+    if (mobileStore.is_verified) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Account is already verified",
+      });
+    }
+
+    // Check if OTP is expired (older than 2 days)
+    const createdAt = moment(mobileStore.created_at).tz("Asia/Kolkata");
+    const now = moment().tz("Asia/Kolkata");
+    const diffInDays = now.diff(createdAt, "days");
+
+    if (diffInDays > 2) {
+      return res.status(400).json({
+        status: "failed",
+        message: "OTP expired. Please click on resent OTP",
+      });
+    }
+
+    // Below logic check otp is equal or not
+    if (mobileStore.mobile_otp !== otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid OTP",
+      });
+    }
+
+    const payload = { _id: mobileStore._id };
+    const token = jwt.sign(payload, jwt_secret, { expiresIn: "2h" });
+
+    // OTP is valid and within time limit
+    mobileStore.is_verified = true;
+    mobileStore.mobile_otp = "";
+    await mobileStore.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Mobile number verified successfully",
+      token,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -76,110 +119,23 @@ const storeVerificationByMobileOTP = async (req, res) => {
   }
 };
 
-// // Verify Admin Email
-// const verifyAdminEmail = async (req, res) => {
-//   try {
-//     const { mobile, otp } = req.body;
-
-//     if (!mobile || !otp) {
-//       return res
-//         .status(400)
-//         .json({ status: "failed", message: "All fields are required" });
-//     }
-
-//     const existingAdmin = await adminModel.findOne({ mobile });
-//     if (!existingAdmin) {
-//       return res
-//         .status(404)
-//         .json({ status: "failed", message: "Email doesn't exist" });
-//     }
-
-//     if (existingAdmin.is_verified) {
-//       return res
-//         .status(400)
-//         .json({ status: "failed", message: "Email is already verified" });
-//     }
-
-//     const emailVerification = await emailVerificationModel.findOne({
-//       userId: existingAdmin._id,
-//       otp,
-//     });
-//     if (!emailVerification) {
-//       await sendEmailVerificationOTP(req, existingAdmin);
-//       return res.status(400).json({
-//         status: "failed",
-//         message: "Invalid OTP, new OTP sent to your email",
-//       });
-//     }
-
-//     const expirationTime = new Date(
-//       emailVerification.createdAt.getTime() + 15 * 60 * 1000
-//     );
-//     if (new Date() > expirationTime) {
-//       await sendEmailVerificationOTP(req, existingAdmin);
-//       return res.status(400).json({
-//         status: "failed",
-//         message: "OTP expired, new OTP sent to your email",
-//       });
-//     }
-
-//     existingAdmin.is_verified = true;
-//     existingAdmin.email_verified_at = new Date().toString();
-//     await existingAdmin.save();
-
-//     await emailVerificationModel.deleteMany({ userId: existingAdmin._id });
-
-//     return res
-//       .status(200)
-//       .json({ status: "success", message: "Email verified successfully" });
-//   } catch (error) {
-//     console.error(error);
-//     return res
-//       .status(500)
-//       .json({ status: "failed", message: "Unable to verify email" });
-//   }
-// };
-
-// // Resend Admin Verification Code
-// const resendAdminVerificationCode = async (req, res) => {
-//   const { email } = req.body;
-//   if (!email) {
-//     return res
-//       .status(400)
-//       .json({ status: "failed", message: "Email is required" });
-//   }
-
-//   const admin = await adminModel.findOne({ email });
-//   if (!admin) {
-//     return res.status(404).json({ status: "failed", message: "Invalid Email" });
-//   }
-
-//   sendEmailVerificationOTP(req, admin);
-
-//   return res.json({
-//     status: "success",
-//     message: "Verification code sent to your email.",
-//   });
-// };
-
-// Store Login
-const storeLogin = async (req, res) => {
+// send otp for already exist store (entity)
+const storeLoginOTP = async (req, res) => {
   try {
-    const { mobile } = req.body;
-    if (!mobile) {
-      return res
-        .status(400)
-        .json({
-          status: "failed",
-          message: "Mobile and password are required",
-        });
+    const { mobile, roles } = req.body;
+    if (!mobile || !roles) {
+      return res.status(400).json({
+        status: "failed",
+        message: "All fields are required",
+      });
     }
 
-    const store = await storeModel.findOne({ mobile, roles: "store" });
+    const store = await storeModel.findOne({ mobile, roles });
+
     if (!store) {
       return res
         .status(404)
-        .json({ status: "failed", message: "Invalid Mobile" });
+        .json({ status: "failed", message: "Invalid Mobile and roles" });
     }
 
     if (!store.is_verified) {
@@ -187,6 +143,50 @@ const storeLogin = async (req, res) => {
         .status(401)
         .json({ status: "failed", message: "Your account is not verified" });
     }
+
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // code to send mobile otp
+    // sendMobiileVerification(otp,store);
+    
+    // OTP is valid and within time limit
+    store.mobile_otp = otp;
+    await store.save();
+
+    return res.status(201).json({
+        status: "success",
+        message: "OTP Sent to mobile number"        
+    });
+
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Unable to Verify Mobile OTP, please try again later",
+    });
+  }
+};
+
+// Store Login using mobile otp verification
+const storeLoginVerified = async (req, res) => {
+  try {
+    const { mobile, roles, mobile_otp } = req.body;
+    if (!mobile || !roles || !mobile_otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "All fields are required",
+      });
+    }
+
+    const store = await storeModel.findOne({ mobile, roles, mobile_otp });
+    if (!store) {
+      return res
+        .status(404)
+        .json({ status: "failed", message: "Invalid Data" });
+    }
+     
 
     const payload = { _id: store._id };
     const token = jwt.sign(payload, jwt_secret, { expiresIn: "2h" });
@@ -207,7 +207,6 @@ const storeLogin = async (req, res) => {
   }
 };
 
-// Store Profile
 const storeProfile = async (req, res) => {
   try {
     const store = await storeModel.findById(req.userId);
@@ -224,7 +223,7 @@ const storeProfile = async (req, res) => {
   }
 };
 
-// Store Logout
+// Store Logout, to logout clear token at client side
 const storeLogout = async (req, res) => {
   try {
     return res.status(200).json({
@@ -241,7 +240,10 @@ const storeLogout = async (req, res) => {
 
 module.exports = {
   storeRegistration,
-  storeLogin,
+  storeVerificationByMobileOTP,
+  storeLoginOTP,
+  storeLoginVerified,
+
   storeProfile,
   storeLogout,
 };

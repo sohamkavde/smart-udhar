@@ -75,7 +75,7 @@ const profileSchema = new mongoose.Schema({
     type: String, 
     required: false,
   },
-  mobile_id: {
+  store_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "store", 
     required: true,

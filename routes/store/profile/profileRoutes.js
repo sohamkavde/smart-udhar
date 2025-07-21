@@ -4,7 +4,8 @@ const asyncHandler = require("../../../middleware/async");
 const common = require("../../../helper/common");
 
 const {
-  storeProfile,
+  createProfile,
+  updateProfile,
 } = require("../../../controller/store/profile/storeProfileCTR");
 
 /* GET users listing. */
@@ -14,6 +15,11 @@ router.get("/", function (req, res, next) {});
 // router.post("/store-register", asyncHandler(storeRegistration));
 
 // // Protected Routes
-router.post("/update-profile", common.tokenmiddleware, asyncHandler(storeProfile));
+router.post("/create-profile", common.tokenmiddleware, asyncHandler(createProfile));
+router.put("/update-profile/:id", common.tokenmiddleware, asyncHandler(updateProfile));
+
+
+
+
 
 module.exports = router;

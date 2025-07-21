@@ -1,5 +1,4 @@
 const storeModel = require("../../../models/store/auth/store");
-const bcrypt = require("bcryptjs");
 
 const jwt = require("jsonwebtoken");
 const jwt_secret = process.env.JWT_TOKEN_SECRET;

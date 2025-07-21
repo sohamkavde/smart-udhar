@@ -8,6 +8,7 @@ const axios = require("axios");
  
 
 const storeRoutes   = require('./routes/store/auth/authRoutes');
+const storeProfileRoutes   = require('./routes/store/profile/profileRoutes');
 // const userRoutes   = require('./routes/userRoutes');
 // const storeRoutes   = require('./routes/storeRoutes');
 
@@ -38,7 +39,7 @@ app.get("/", (req, res) => res.send("Express on Vercel"));
 
 // Load Routes
 app.use(storeRoutes)
-// app.use(userRoutes)
+app.use(storeProfileRoutes)
 // app.use(storeRoutes)
 
 

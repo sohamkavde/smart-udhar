@@ -109,4 +109,85 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { createProfile,updateProfile };
+const findProfileById = async (req, res) => {
+  try {
+    const profileId = req.params.id;
+
+    const profile = await Profile.findById(profileId);
+
+    if (!profile) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Profile retrieved successfully",
+      data: profile,
+    });
+  } catch (error) {
+    console.error("Error finding profile:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+const findAllProfiles = async (req, res) => {
+  try {
+    const profiles = await Profile.find().sort({ created_at: -1 });
+
+    return res.status(200).json({
+      status: "success",
+      message: "All profiles retrieved successfully",
+      data: profiles,
+    });
+  } catch (error) {
+    console.error("Error fetching profiles:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+
+const deleteProfileById = async (req, res) => {
+  try {
+    const profileId = req.params.id;
+
+    const deletedProfile = await Profile.findByIdAndDelete(profileId);
+
+    if (!deletedProfile) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Profile deleted successfully",
+      data: deletedProfile,
+    });
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+
+module.exports = {
+  createProfile,
+  updateProfile,
+  findProfileById,
+  findAllProfiles,
+  deleteProfileById,
+};
+

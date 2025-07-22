@@ -18,13 +18,13 @@ const {
 router.get("/", function (req, res, next) {});
 
 // Public Routes
-router.post("/store-register", asyncHandler(storeRegistration));
-router.post("/store-verification", asyncHandler(storeVerificationByMobileOTP));
-router.post('/store-login-otp', asyncHandler(storeLoginOTP))
-router.post('/store-login-verify', asyncHandler(storeLoginVerified))
+router.post("/store-auth/register", asyncHandler(storeRegistration));
+router.post("/store-auth/verification", asyncHandler(storeVerificationByMobileOTP));
+router.post('/store-auth/login-otp', asyncHandler(storeLoginOTP))
+router.post('/store-auth/login-verify', asyncHandler(storeLoginVerified))
 
 // // Protected Routes
-router.get("/profile", common.tokenmiddleware, asyncHandler(storeProfile));
-router.post("/logout", common.tokenmiddleware, asyncHandler(storeLogout));
+router.get("/store-auth/profile", common.tokenmiddleware, asyncHandler(storeProfile));
+router.post("/store-auth/logout", common.tokenmiddleware, asyncHandler(storeLogout));
 
 module.exports = router;

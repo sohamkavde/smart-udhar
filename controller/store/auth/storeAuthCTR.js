@@ -190,6 +190,7 @@ const storeLoginVerified = async (req, res) => {
     const payload = { _id: store._id };
     const token = jwt.sign(payload, jwt_secret, { expiresIn: "2h" });
 
+    store.mobile_otp = "";
     store.lastLogin = new Date().toString();
     await store.save();
 

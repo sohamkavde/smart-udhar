@@ -9,7 +9,7 @@ const {
     deleteCustomer,
     findCustomerById,
     getAllCustomers
-} = require("../../../controller/store/profile/storeCustomerCTR");
+} = require("../../../controller/store/customer/storeCustomerCTR");
 
 /* GET users listing. */
 router.get("/", function (req, res, next) {});
@@ -17,11 +17,11 @@ router.get("/", function (req, res, next) {});
 
 // // Protected Routes
 router.post("/create-customer", common.tokenmiddleware, asyncHandler(createCustomer));
-router.put("/delete-customer", common.tokenmiddleware, asyncHandler(deleteCustomer));
-router.put("/find-all-customer", common.tokenmiddleware, asyncHandler(getAllCustomers));
+router.get("/find-all-customer", common.tokenmiddleware, asyncHandler(getAllCustomers));
 
-router.put("/update-customer/:id", common.tokenmiddleware, asyncHandler(updateCustomer));
-router.put("/find-customer/:id", common.tokenmiddleware, asyncHandler(findCustomerById));
+router.post("/delete-customer/:customId", common.tokenmiddleware, asyncHandler(deleteCustomer));
+router.put("/update-customer", common.tokenmiddleware, asyncHandler(updateCustomer));
+router.put("/find-customer/:customId", common.tokenmiddleware, asyncHandler(findCustomerById));
 
 
 

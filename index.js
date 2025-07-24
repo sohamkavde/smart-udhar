@@ -8,7 +8,7 @@ const axios = require("axios");
  
 
 const storeRoutes   = require('./routes/store/auth/authRoutes');
-const storeProfileRoutes   = require('./routes/store/profile/profileRoutes');
+const storeProfileRoutes   = require('./routes/store/profile/profileRoutes');// business routes
 const storeCustomerRoutes   = require('./routes/store/customer/customerRoutes');
 
 // const userRoutes   = require('./routes/userRoutes');

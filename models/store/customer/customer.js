@@ -20,6 +20,11 @@ const customerSchema = new mongoose.Schema({
       ref: "store", 
       required: true,
   },
+  storeProfile_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "storeProfile", 
+      required: true,
+  },
   createdAt: {
     type: Date,
     default: () => moment().tz("Asia/Kolkata").toDate(), // Set to Indian Standard Time

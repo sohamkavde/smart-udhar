@@ -9,9 +9,9 @@ const moment = require("moment-timezone");
 // Store Registration
 const storeRegistration = async (req, res) => {
   try {
-    const { mobile, otp, roles } = req.body;
+    const { mobile, roles } = req.body;
 
-    if (!mobile || !otp || !roles) {
+    if (!mobile || !roles) {
       return res
         .status(400)
         .json({ status: "failed", message: "All fields are required" });
@@ -23,7 +23,8 @@ const storeRegistration = async (req, res) => {
         .status(400)
         .json({ status: "failed", message: "Mobile already exists" });
     }
-    const mobile_otp = otp;
+   const mobile_otp = Math.floor(100000 + Math.random() * 900000).toString();
+     
     const newStore = await new storeModel({
       mobile,
       mobile_otp,
@@ -51,9 +52,9 @@ const storeRegistration = async (req, res) => {
 // Store Verification By mobile OTP
 const storeVerificationByMobileOTP = async (req, res) => {
   try {
-    const { mobile, otp } = req.body;
+    const { mobile, mobile_otp } = req.body;
 
-    if (!mobile || !otp) {
+    if (!mobile || !mobile_otp) {
       return res.status(400).json({
         status: "failed",
         message: "All fields are required",
@@ -89,7 +90,7 @@ const storeVerificationByMobileOTP = async (req, res) => {
     }
 
     // Below logic check otp is equal or not
-    if (mobileStore.mobile_otp !== otp) {
+    if (mobileStore.mobile_otp !== mobile_otp) {
       return res.status(400).json({
         status: "failed",
         message: "Invalid OTP",

@@ -12,8 +12,7 @@ exports.tokenmiddleware = (req, res, next) => {
     } else {
         let payload = module.exports.checktoken(token)
         if (payload) {
-            req.userId = payload;
-            console.log("userID ",req.userId);            
+            req.userId = payload;           
         }
         if (payload == null || payload == undefined || !payload) {
             return res.status(401).send('unauthorized')

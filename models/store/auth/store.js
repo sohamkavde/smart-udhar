@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const moment = require("moment-timezone");
 
 const storeSchema = new mongoose.Schema({
-  name: { type: String, trim: true }, // user name
   mobile: { type: String, default: "" },
   mobile_otp: { type: String }, // get otp for mobile
   email: {
@@ -13,9 +12,7 @@ const storeSchema = new mongoose.Schema({
     lowercase: true,
   }, // will updata from dashboard
   email_otp: { type: String }, // get otp for email
-  is_verified: { type: Boolean, default: false }, 
-  social_id: { type: String, default: "" },
-  dateOfBirth: { type: String, default: "" },
+  is_verified: { type: Boolean, default: false },// Since we verify using mobile number each time, is_verified indicates if the store is verified.  
   lastLogin: { type: Date, default: null },
   roles: { type: String,default: null},
   created_at: {

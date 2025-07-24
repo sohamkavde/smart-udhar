@@ -15,6 +15,11 @@ const customerSchema = new mongoose.Schema({
   panNumber: { type: String, default: null },
   companyName: { type: String, default: null },
   gstNumber: { type: String, default: null },
+  store_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "store", 
+      required: true,
+  },
   createdAt: {
     type: Date,
     default: () => moment().tz("Asia/Kolkata").toDate(), // Set to Indian Standard Time

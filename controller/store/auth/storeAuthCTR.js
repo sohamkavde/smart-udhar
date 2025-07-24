@@ -31,7 +31,7 @@ const storeRegistration = async (req, res) => {
     }).save();
 
     // send otp for registration verification
-    // // sendMobiileVerification(otp,newStore);
+    // // sendMobileVerification(otp,newStore);
  
 
     return res.status(201).json({

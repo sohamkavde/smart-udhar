@@ -15,10 +15,11 @@ const createCustomer = async (req, res) => {
       panNumber,
       companyName,
       gstNumber,
+      store_id,
     } = req.body;
 
     // Basic validation (optional)
-    if (!name || !mobile || !email || !address || !pin || !city || !state || !aadharCardNumber || !panNumber || !companyName || !gstNumber) {
+    if (!name || !mobile || !email || !address || !pin || !city || !state || !aadharCardNumber || !panNumber || !companyName || !gstNumber || !store_id) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
@@ -34,6 +35,8 @@ const createCustomer = async (req, res) => {
       panNumber,
       companyName,
       gstNumber,
+      store_id, // Ensure this is a valid ObjectId reference to the store
+      // customId will be generated automatically by the pre-save hook
     });
 
     await customer.save();

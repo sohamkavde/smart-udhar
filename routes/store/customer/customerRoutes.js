@@ -19,9 +19,9 @@ router.get("/", function (req, res, next) {});
 router.post("/store-customer/create", common.tokenmiddleware, asyncHandler(createCustomer));
 router.get("/store-customer/find-all", common.tokenmiddleware, asyncHandler(getAllCustomers));
 
-router.post("/store-customer/delete/:customId", common.tokenmiddleware, asyncHandler(deleteCustomer));
+router.post("/store-customer/delete/:id", common.tokenmiddleware, asyncHandler(deleteCustomer));
 router.put("/store-customer/update", common.tokenmiddleware, asyncHandler(updateCustomer));
-router.put("/store-customer/findBy-id/:customId", common.tokenmiddleware, asyncHandler(findCustomerById));
+router.put("/store-customer/findBy-id/:id", common.tokenmiddleware, asyncHandler(findCustomerById));
 
 
 

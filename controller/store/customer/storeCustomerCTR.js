@@ -1,5 +1,6 @@
-const Customer = require("../../../models/store/customer/customer");
 
+const mongoose = require("mongoose");
+const Customer = require("../../../models/store/customer/customer");
 
 const createCustomer = async (req, res) => {
   try {
@@ -20,8 +21,24 @@ const createCustomer = async (req, res) => {
     } = req.body;
 
     // Basic validation (optional)
-    if (!name || !mobile || !email || !address || !pin || !city || !state || !aadharCardNumber || !panNumber || !companyName || !gstNumber || !store_id || !storeProfile_id) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    if (
+      !name ||
+      !mobile ||
+      !email ||
+      !address ||
+      !pin ||
+      !city ||
+      !state ||
+      !aadharCardNumber ||
+      !panNumber ||
+      !companyName ||
+      !gstNumber ||
+      !store_id ||
+      !storeProfile_id
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     const customer = new Customer({
@@ -42,36 +59,53 @@ const createCustomer = async (req, res) => {
     });
 
     await customer.save();
-    return res.status(201).json({ success: true, message: "Customer created successfully", customer });
+    return res
+      .status(201)
+      .json({
+        success: true,
+        message: "Customer created successfully",
+        customer,
+      });
   } catch (error) {
     console.error("Error creating customer:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
-
 const updateCustomer = async (req, res) => {
   try {
-    const { customId } = req.body;
+    const { _id } = req.body;
 
-    if (!customId) {
-      return res.status(400).json({ success: false, message: "customId is required" });
+    if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Valid _id is required" });
     }
 
-    // Remove customId from update fields to prevent overwriting it
-    const { customId: _, ...updateFields } = req.body;
+    // Discard customId and _id from the update object
+    const { _id: __, customId: ___, ...updateFields } = req.body;
 
-    const updatedCustomer = await Customer.findOneAndUpdate(
-      { customId }, // find by customId
-      updateFields, // update fields
-      { new: true } // return updated document
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      _id,
+      updateFields,
+      { new: true }
     );
 
     if (!updatedCustomer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
-    res.status(200).json({ success: true, message: "Customer updated", customer: updatedCustomer });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Customer updated",
+        customer: updatedCustomer,
+      });
   } catch (error) {
     console.error("Update error:", error);
     res.status(500).json({ success: false, message: "Server error" });
@@ -80,15 +114,27 @@ const updateCustomer = async (req, res) => {
 
 const deleteCustomer = async (req, res) => {
   try {
-    const { customId } = req.params;
-
-    const deletedCustomer = await Customer.findOneAndDelete({ customId });
-
-    if (!deletedCustomer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+    const { id } = req.params;
+    const _id = id;
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(400).json({ success: false, message: "Invalid _id" });
     }
 
-    res.status(200).json({ success: true, message: "Customer deleted successfully", customer: deletedCustomer });
+    const deletedCustomer = await Customer.findByIdAndDelete(_id);
+
+    if (!deletedCustomer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
+    }
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Customer deleted successfully",
+        customer: deletedCustomer,
+      });
   } catch (error) {
     console.error("Error deleting customer:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -97,13 +143,19 @@ const deleteCustomer = async (req, res) => {
 
 const findCustomerById = async (req, res) => {
   try {
-    const { customId } = req.params;
+    const { id } = req.params;
+    const _id = id;
+    // Discard customId if passed as a query or param (defensive)
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(400).json({ success: false, message: "Invalid _id" });
+    }
 
-    // Find by customId (e.g., CUST001)
-    const customer = await Customer.findOne({ customId });
+    const customer = await Customer.findById(_id);
 
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
     res.status(200).json({ success: true, customer });
@@ -128,11 +180,10 @@ const getAllCustomers = async (req, res) => {
   }
 };
 
-
 module.exports = {
-    createCustomer,
-    updateCustomer,
-    deleteCustomer,
-    findCustomerById,
-    getAllCustomers
-}
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+  findCustomerById,
+  getAllCustomers,
+};

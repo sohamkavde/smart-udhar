@@ -10,6 +10,7 @@ const axios = require("axios");
 const storeRoutes   = require('./routes/store/auth/authRoutes');
 const storeProfileRoutes   = require('./routes/store/profile/profileRoutes');// business routes
 const storeCustomerRoutes   = require('./routes/store/customer/customerRoutes');
+const storeProductRoutes   = require('./routes/store/product/productRoutes');
 
 // const userRoutes   = require('./routes/userRoutes');
 // const storeRoutes   = require('./routes/storeRoutes');
@@ -43,6 +44,7 @@ app.get("/", (req, res) => res.send("Express on Vercel"));
 app.use(storeRoutes)
 app.use(storeProfileRoutes)
 app.use(storeCustomerRoutes)
+app.use(storeProductRoutes)
 
 
 const PORT = process.env.PORT || 5000;

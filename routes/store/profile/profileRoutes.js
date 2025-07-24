@@ -18,7 +18,7 @@ router.get("/", function (req, res, next) {});
 // // Protected Routes
 router.post("/store-business-profile/create", common.tokenmiddleware, asyncHandler(createProfile));
 router.get("/store-business-profile/findBy-id/:id", common.tokenmiddleware, asyncHandler(findProfileById));
-router.get("/store-business-profile/find-all/:id", common.tokenmiddleware, asyncHandler(findAllProfiles));
+router.get("/store-business-profile/find-all", common.tokenmiddleware, asyncHandler(findAllProfiles));
 
 //delete profile
 router.delete("/store-business-profile/delete/:id", common.tokenmiddleware, asyncHandler(deleteProfileById));

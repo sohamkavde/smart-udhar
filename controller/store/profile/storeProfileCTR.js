@@ -139,10 +139,12 @@ const findProfileById = async (req, res) => {
 const findAllProfiles = async (req, res) => {
   try {
     const profiles = await Profile.find().sort({ created_at: -1 });
+    const totalCount = await Profile.countDocuments();
 
     return res.status(200).json({
       status: "success",
       message: "All profiles retrieved successfully",
+      total: totalCount,
       data: profiles,
     });
   } catch (error) {
@@ -153,6 +155,7 @@ const findAllProfiles = async (req, res) => {
     });
   }
 };
+
 
 
 const deleteProfileById = async (req, res) => {

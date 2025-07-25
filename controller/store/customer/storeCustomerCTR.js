@@ -167,7 +167,9 @@ const findCustomerById = async (req, res) => {
 
 const getAllCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find().sort();
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+    const customers = await Customer.find({ store_id, storeProfile_id }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

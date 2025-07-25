@@ -18,7 +18,7 @@ router.get("/", (req, res) => {
 
 // Protected Product Routes
 router.post("/store-product/create", common.tokenmiddleware, asyncHandler(createProduct));
-router.get("/store-product/find-all", common.tokenmiddleware, asyncHandler(getAllProducts));
+router.get("/store-product/find-all/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(getAllProducts));
 
 router.post("/store-product/delete/:id", common.tokenmiddleware, asyncHandler(deleteProduct));
 router.put("/store-product/update/:id", common.tokenmiddleware, asyncHandler(updateProduct));

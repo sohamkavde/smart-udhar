@@ -17,7 +17,7 @@ router.get("/", function (req, res, next) {});
 
 // // Protected Routes
 router.post("/store-customer/create", common.tokenmiddleware, asyncHandler(createCustomer));
-router.get("/store-customer/find-all", common.tokenmiddleware, asyncHandler(getAllCustomers));
+router.get("/store-customer/find-all/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(getAllCustomers));
 
 router.post("/store-customer/delete/:id", common.tokenmiddleware, asyncHandler(deleteCustomer));
 router.put("/store-customer/update", common.tokenmiddleware, asyncHandler(updateCustomer));

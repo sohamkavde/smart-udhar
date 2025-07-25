@@ -109,8 +109,10 @@ const findProductById = async (req, res) => {
 // Get All Products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, count: products.length, products });
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+    const products = await Product.find({ store_id, storeProfile_id }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, total: products.length, products });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });

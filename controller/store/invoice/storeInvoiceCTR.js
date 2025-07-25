@@ -1,7 +1,7 @@
 const Invoice = require("../../../models/store/invoice/invoice");
 
 // Create Invoice
-exports.createInvoice = async (req, res) => {
+const createInvoice = async (req, res) => {
   try {
     const invoiceData = req.body;
 
@@ -21,18 +21,20 @@ exports.createInvoice = async (req, res) => {
 };
 
 // Get All Invoices (for logged-in store)
-exports.getAllInvoices = async (req, res) => {
+const getAllInvoices = async (req, res) => {
   try {
-    const store_id = req.user.store_id;
-    const storeProfile_id = req.user.storeProfile_id;
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
 
     const invoices = await Invoice.find({ store_id, storeProfile_id }).sort({
       createdAt: -1,
     });
+    const totalCount = await Invoice.countDocuments({ store_id, storeProfile_id });
 
     return res.status(200).json({
       status: "success",
       message: "Invoices fetched successfully",
+      total: totalCount,
       data: invoices,
     });
   } catch (error) {
@@ -44,7 +46,7 @@ exports.getAllInvoices = async (req, res) => {
 };
 
 // Find Invoice by ID
-exports.findInvoiceById = async (req, res) => {
+const findInvoiceById = async (req, res) => {
   try {
     const id = req.params.id;
     const _id = id;
@@ -66,7 +68,7 @@ exports.findInvoiceById = async (req, res) => {
 };
 
 // Update Invoice
-exports.updateInvoice = async (req, res) => {
+const updateInvoice = async (req, res) => {
   try {
     const id = req.params.id;
     const _id = id;
@@ -96,7 +98,7 @@ exports.updateInvoice = async (req, res) => {
 };
 
 // Delete Invoice
-exports.deleteInvoice = async (req, res) => {
+const deleteInvoice = async (req, res) => {
   try {
     const id = req.params.id;
     const _id = id;
@@ -119,3 +121,11 @@ exports.deleteInvoice = async (req, res) => {
       .json({ status: "error", message: "Internal Server Error" });
   }
 };
+
+module.exports = {
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  findInvoiceById,
+  getAllInvoices,
+}

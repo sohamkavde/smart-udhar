@@ -1,7 +1,12 @@
 const mongoose = require("mongoose");
-const moment = require("moment-timezone");
+const moment = require("moment-timezone"); 
 
 const productSchema = new mongoose.Schema({
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
   name: String,
   qty: Number,
   unit: String,
@@ -18,6 +23,11 @@ const milestoneSchema = new mongoose.Schema({
 });
 
 const invoiceSchema = new mongoose.Schema({
+  customerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Customer",
+    required: true, 
+  },
   name: { type: String, required: true },
   phone: { type: String },
   balance: { type: Number, default: 0 },

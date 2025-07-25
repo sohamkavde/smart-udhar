@@ -12,6 +12,7 @@ const storeProfileRoutes   = require('./routes/store/profile/profileRoutes');// 
 const storeCustomerRoutes   = require('./routes/store/customer/customerRoutes');
 const storeProductRoutes   = require('./routes/store/product/productRoutes');
 const storeInvoiceRoutes   = require('./routes/store/invoice/invoiceRoute');
+const storeStaffRoutes   = require('./routes/store/staff/staffRoutes');
 
 // const userRoutes   = require('./routes/userRoutes');
 // const storeRoutes   = require('./routes/storeRoutes');

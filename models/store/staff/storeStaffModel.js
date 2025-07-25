@@ -4,7 +4,7 @@ const moment = require("moment-timezone");
 const storeStaffSchema = new mongoose.Schema({
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
-  mobileNumber: { type: String, required: true, unique: true, trim: true },
+  mobileNumber: { type: String, required: true, trim: true },
   emailId: { type: String, trim: true, lowercase: true },
   address: { type: String, trim: true },
   pinNumber: { type: String, trim: true },

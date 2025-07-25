@@ -19,10 +19,6 @@ const storeStaffRoutes   = require('./routes/store/staff/staffRoutes');
 
 // const moment = require('moment-timezone');
 
-
-
-
-
 const app = express();
 app.use(cors());
 app.use(cookieParser());
@@ -48,6 +44,7 @@ app.use(storeProfileRoutes)
 app.use(storeCustomerRoutes)
 app.use(storeProductRoutes)
 app.use(storeInvoiceRoutes)
+app.use(storeStaffRoutes)
 
 
 const PORT = process.env.PORT || 5000;

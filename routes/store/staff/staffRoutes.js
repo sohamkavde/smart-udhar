@@ -12,7 +12,7 @@ const {
 } = require("../../../controller/store/staff/storeStaffCTR");
 
 /* GET staff listing. */
-router.get("/", function (req, res, next) {
+router.get("/store-staff", function (req, res, next) {
     res.send("Staff route working");
 });
 

@@ -20,6 +20,8 @@ const createStaff = async (req, res) => {
       image: data.image || "",
       status: data.status || "active",
       online: data.online || false,
+        store_id: data.store_id,
+        storeProfile_id: data.storeProfile_id,
       createdAt: moment().tz("Asia/Kolkata").toDate(),
     });
 
@@ -80,8 +82,8 @@ const deleteStaff = async (req, res) => {
 // @route   PUT /store-staff/update
 const updateStaff = async (req, res) => {
   try {
-    const { id, ...updateData } = req.body;
-    const _id = id;
+    const _id = req.params.id;
+    const {...updateData} =  req.body;   
 
     const staff = await StoreStaff.findByIdAndUpdate(
       _id,

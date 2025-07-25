@@ -138,8 +138,11 @@ const findProfileById = async (req, res) => {
 
 const findAllProfiles = async (req, res) => {
   try {
-    const profiles = await Profile.find().sort({ created_at: -1 });
-    const totalCount = await Profile.countDocuments();
+    // :store_id/:storeProfile_id
+     const store_id = req.params.store_id; 
+
+    const profiles = await Profile.find({ store_id }).sort({ created_at: -1 });
+    const totalCount = await Profile.countDocuments({ store_id });
 
     return res.status(200).json({
       status: "success",

@@ -25,6 +25,8 @@ router.post("/store-invoice/delete/:id", common.tokenmiddleware, asyncHandler(de
 router.put("/store-invoice/update/:id", common.tokenmiddleware, asyncHandler(updateInvoice));
 router.get("/store-invoice/findBy-id/:id", common.tokenmiddleware, asyncHandler(findInvoiceById));
 
+
+// Customer-specific routes
 router.get("/store-customer-invoice/find-all/:customer_id/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(getAllInvoicesOfCustomer));
 
 module.exports = router;

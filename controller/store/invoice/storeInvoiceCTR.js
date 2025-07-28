@@ -29,7 +29,10 @@ const getAllInvoices = async (req, res) => {
     const invoices = await Invoice.find({ store_id, storeProfile_id }).sort({
       createdAt: -1,
     });
-    const totalCount = await Invoice.countDocuments({ store_id, storeProfile_id });
+    const totalCount = await Invoice.countDocuments({
+      store_id,
+      storeProfile_id,
+    });
 
     return res.status(200).json({
       status: "success",
@@ -39,6 +42,31 @@ const getAllInvoices = async (req, res) => {
     });
   } catch (error) {
     console.error("Fetch Invoices Error:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
+  }
+};
+
+const getAllInvoicesOfCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.customer_id;
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+
+    const invoices = await Invoice.find({
+      customerId,
+      store_id,
+      storeProfile_id,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Invoices fetched successfully",
+      data: invoices,
+    });
+  } catch (error) {
+    console.error("Fetch Customer Invoices Error:", error);
     return res
       .status(500)
       .json({ status: "error", message: "Internal Server Error" });
@@ -128,4 +156,5 @@ module.exports = {
   deleteInvoice,
   findInvoiceById,
   getAllInvoices,
-}
+  getAllInvoicesOfCustomer,
+};

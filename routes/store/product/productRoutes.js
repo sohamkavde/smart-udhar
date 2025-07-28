@@ -6,6 +6,7 @@ const common = require("../../../helper/common");
 const {
   createProduct,
   updateProduct,
+  getProductHistory,
   deleteProduct,
   findProductById,
   getAllProducts
@@ -22,6 +23,7 @@ router.get("/store-product/find-all/:store_id/:storeProfile_id", common.tokenmid
 
 router.post("/store-product/delete/:id", common.tokenmiddleware, asyncHandler(deleteProduct));
 router.put("/store-product/update/:id", common.tokenmiddleware, asyncHandler(updateProduct));
+router.get("/store-product/product-history/:id", common.tokenmiddleware, asyncHandler(getProductHistory));
 router.get("/store-product/findBy-id/:id", common.tokenmiddleware, asyncHandler(findProductById));
 
 module.exports = router;

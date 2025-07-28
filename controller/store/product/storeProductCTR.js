@@ -1,4 +1,6 @@
 const Product = require("../../../models/store/product/product"); // Adjust path as needed
+// Update Product 
+const ProductHistory = require("../../../models/store/product/productHistory"); // Adjust path as needed
 const  mongoose = require("mongoose");
 
 // Create Product
@@ -19,36 +21,74 @@ const createProduct = async (req, res) => {
   }
 };
 
-// Update Product
+
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const _id = id;
+    const _id = id; // id is product ID
 
     if (!mongoose.Types.ObjectId.isValid(_id)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid product ID" });
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
     }
 
-    const updated = await Product.findByIdAndUpdate(_id, req.body, {
-      new: true,
+    const existingProduct = await Product.findById(_id);
+    if (!existingProduct) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Save history
+    await ProductHistory.create({
+      product_id: _id,
+      changes: {
+        before: existingProduct.toObject(),
+        after: req.body,
+      },
+      store_id: req.body?.store_id,  
+      storeProfile_id: req.body?.storeProfile_id, 
     });
 
-    if (!updated) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found" });
-    }
+    // Now update the product
+    const updated = await Product.findByIdAndUpdate(id, req.body, { new: true });
 
-    res
-      .status(200)
-      .json({ success: true, message: "Product updated", product: updated });
+    res.status(200).json({
+      success: true,
+      message: "Product updated",
+      product: updated,
+    });
   } catch (error) {
     console.error("Error updating product:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+const getProductHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const productId = id; // id is product ID
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
+
+    const history = await ProductHistory.find({ product_id: productId }) // Optional: populate updater info
+      .sort({ updated_at: -1 }); // Most recent first
+
+    if (history.length === 0) {
+      return res.status(404).json({ success: false, message: "No history found for this product" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product update history fetched successfully",
+      count: history.length,
+      history,
+    });
+  } catch (error) {
+    console.error("Error fetching product history:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 
 // Delete Product
 const deleteProduct = async (req, res) => {
@@ -122,6 +162,7 @@ const getAllProducts = async (req, res) => {
 module.exports = {
   createProduct,
   updateProduct,
+  getProductHistory,
   deleteProduct,
   findProductById,
   getAllProducts,

@@ -10,6 +10,7 @@ const {
   findInvoiceById,
   getAllInvoices,
   getAllInvoicesOfCustomer,
+  updateMilestones
 } = require("../../../controller/store/invoice/storeInvoiceCTR"); // Make sure this path is correct
 
 // Base route
@@ -28,5 +29,6 @@ router.get("/store-invoice/findBy-id/:id", common.tokenmiddleware, asyncHandler(
 
 // Customer-specific routes
 router.get("/store-customer-invoice/find-all/:customer_id/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(getAllInvoicesOfCustomer));
+router.put("/store-customer-invoice/update-milestone/:id", common.tokenmiddleware, asyncHandler(updateMilestones));
 
 module.exports = router;

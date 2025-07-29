@@ -18,6 +18,7 @@ const productSchema = new mongoose.Schema({
 const milestoneSchema = new mongoose.Schema({
   milestoneName: String,
   amount: Number,
+  paymentMode: String,
   dueDate: Date,
   status: String,
 });

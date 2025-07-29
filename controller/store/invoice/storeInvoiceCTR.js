@@ -1,5 +1,5 @@
 const Invoice = require("../../../models/store/invoice/invoice");
-
+const moment = require("moment-timezone");
 // Create Invoice
 const createInvoice = async (req, res) => {
   try {
@@ -71,6 +71,38 @@ const getAllInvoicesOfCustomer = async (req, res) => {
       .status(500)
       .json({ status: "error", message: "Internal Server Error" });
   }
+};
+
+// @desc    Update milestones for a given invoice
+// @route   PUT /api/invoice/:id/milestones
+const updateMilestones = async (req, res) => {
+  const _id = req.params.id;
+  const { milestones } = req.body;
+
+  if (!Array.isArray(milestones)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Milestones must be an array" });
+  }
+
+  const updatedInvoice = await Invoice.findByIdAndUpdate(
+    _id,
+    {
+      $set: {
+        milestones: milestones,
+        updatedAt: moment().tz("Asia/Kolkata").toDate(),
+      },
+    },
+    { new: true }
+  );
+
+  if (!updatedInvoice) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Invoice not found" });
+  }
+
+  res.status(200).json({ success: true, data: updatedInvoice });
 };
 
 // Find Invoice by ID
@@ -157,4 +189,5 @@ module.exports = {
   findInvoiceById,
   getAllInvoices,
   getAllInvoicesOfCustomer,
+  updateMilestones,
 };

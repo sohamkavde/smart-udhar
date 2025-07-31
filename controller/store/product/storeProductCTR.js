@@ -159,6 +159,20 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const uploadExcelData = async (req, res) => {
+  try {
+    const inserted = await req.Model.insertMany(req.excelData);
+    res.status(200).json({
+      message: "Data inserted successfully",
+      count: inserted.length,
+      data:req.excelData
+    });
+  } catch (error) {
+    console.error("Insert Error:", error);
+    res.status(500).json({ error: "Failed to insert data" });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -166,4 +180,5 @@ module.exports = {
   deleteProduct,
   findProductById,
   getAllProducts,
+  uploadExcelData
 };

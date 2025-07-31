@@ -1,7 +1,10 @@
 var express = require("express");
 var router = express.Router();
 const asyncHandler = require("../../../middleware/async");
-const common = require("../../../helper/common");
+const common = require("../../../helper/common"); 
+const excelParser = require("../../../middleware/excelParser");
+const multer = require("multer");
+
 
 const {
   createProduct,
@@ -9,7 +12,8 @@ const {
   getProductHistory,
   deleteProduct,
   findProductById,
-  getAllProducts
+  getAllProducts,
+  uploadExcelData
 } = require("../../../controller/store/product/storeProductCTR");
 
 // Base route
@@ -25,5 +29,9 @@ router.post("/store-product/delete/:id", common.tokenmiddleware, asyncHandler(de
 router.put("/store-product/update/:id", common.tokenmiddleware, asyncHandler(updateProduct));
 router.get("/store-product/product-history/:id", common.tokenmiddleware, asyncHandler(getProductHistory));
 router.get("/store-product/findBy-id/:id", common.tokenmiddleware, asyncHandler(findProductById));
+
+// Excel upload route
+const upload = multer({ dest: "../../../uploads/" });
+router.post("/store-product/upload-excel", common.tokenmiddleware, upload.single("excelFile"), excelParser, uploadExcelData);
 
 module.exports = router;

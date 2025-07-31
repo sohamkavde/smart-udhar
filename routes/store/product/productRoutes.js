@@ -13,7 +13,8 @@ const {
   deleteProduct,
   findProductById,
   getAllProducts,
-  uploadExcelData
+  uploadExcelData,
+  exportProductsToExcel
 } = require("../../../controller/store/product/storeProductCTR");
 
 // Base route
@@ -33,5 +34,5 @@ router.get("/store-product/findBy-id/:id", common.tokenmiddleware, asyncHandler(
 // Excel upload route
 const upload = multer({ dest: "../../../uploads/" });
 router.post("/store-product/upload-excel", common.tokenmiddleware, upload.single("excelFile"), excelParser, uploadExcelData);
-
+router.get("/store-product/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportProductsToExcel));
 module.exports = router;

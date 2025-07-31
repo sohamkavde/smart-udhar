@@ -1,0 +1,12 @@
+Product Route : 
+
+1) Product Bulk import excel 
+
+curl --location 'http://localhost:5000/store-product/upload-excel' \
+--header 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODgxZDFkMGY5ZDA0M2JjYzQ3NjkzODAiLCJpYXQiOjE3NTM5Mzg3ODMsImV4cCI6MTc1Mzk0NTk4M30.fnlwrCSXl8hqPsqhAnoTd2DBn_P3V0PxVx4xyr-cUKA' \
+--form 'excelFile=@"/C:/Users/91798/Downloads/dummy_product_data.csv"' \
+--form 'schema="Product"' \
+--form 'store_id="64bfa5821a8890ff37d5c9d2"' \
+--form 'storeProfile_id="64c3a4ef7b1b4310559e1ea9"'
+
+Product Bulk import excel 

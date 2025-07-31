@@ -1,26 +1,24 @@
 const Product = require("../../../models/store/product/product"); // Adjust path as needed
-// Update Product 
+// Update Product
 const ProductHistory = require("../../../models/store/product/productHistory"); // Adjust path as needed
-const  mongoose = require("mongoose");
+const mongoose = require("mongoose");
+const ExcelJS = require("exceljs"); // Ensure you have exceljs installed for exporting to Excel
 
 // Create Product
 const createProduct = async (req, res) => {
   try {
     const product = new Product(req.body);
     const savedProduct = await product.save();
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Product created",
-        product: savedProduct,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Product created",
+      product: savedProduct,
+    });
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 const updateProduct = async (req, res) => {
   try {
@@ -28,12 +26,16 @@ const updateProduct = async (req, res) => {
     const _id = id; // id is product ID
 
     if (!mongoose.Types.ObjectId.isValid(_id)) {
-      return res.status(400).json({ success: false, message: "Invalid product ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product ID" });
     }
 
     const existingProduct = await Product.findById(_id);
     if (!existingProduct) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
 
     // Save history
@@ -43,12 +45,14 @@ const updateProduct = async (req, res) => {
         before: existingProduct.toObject(),
         after: req.body,
       },
-      store_id: req.body?.store_id,  
-      storeProfile_id: req.body?.storeProfile_id, 
+      store_id: req.body?.store_id,
+      storeProfile_id: req.body?.storeProfile_id,
     });
 
     // Now update the product
-    const updated = await Product.findByIdAndUpdate(id, req.body, { new: true });
+    const updated = await Product.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
 
     res.status(200).json({
       success: true,
@@ -67,14 +71,18 @@ const getProductHistory = async (req, res) => {
     const productId = id; // id is product ID
 
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ success: false, message: "Invalid product ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product ID" });
     }
 
     const history = await ProductHistory.find({ product_id: productId }) // Optional: populate updater info
       .sort({ updated_at: -1 }); // Most recent first
 
     if (history.length === 0) {
-      return res.status(404).json({ success: false, message: "No history found for this product" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No history found for this product" });
     }
 
     res.status(200).json({
@@ -88,7 +96,6 @@ const getProductHistory = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 // Delete Product
 const deleteProduct = async (req, res) => {
@@ -151,7 +158,9 @@ const getAllProducts = async (req, res) => {
   try {
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
-    const products = await Product.find({ store_id, storeProfile_id }).sort({ createdAt: -1 });
+    const products = await Product.find({ store_id, storeProfile_id }).sort({
+      createdAt: -1,
+    });
     res.status(200).json({ success: true, total: products.length, products });
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -165,11 +174,51 @@ const uploadExcelData = async (req, res) => {
     res.status(200).json({
       message: "Data inserted successfully",
       count: inserted.length,
-      data:req.excelData
+      data: req.excelData,
     });
   } catch (error) {
     console.error("Insert Error:", error);
     res.status(500).json({ error: "Failed to insert data" });
+  }
+};
+
+const exportProductsToExcel = async (req, res) => {
+  try {
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+    const products = await Product.find({ store_id, storeProfile_id }).lean();
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Products");
+
+    worksheet.columns = [
+      { header: "Name", key: "name", width: 20 },
+      { header: "Product Image", key: "product_image", width: 30 },
+      { header: "Quantity", key: "quantity", width: 10 },
+      { header: "Default Quantity", key: "defualt_quantity", width: 15 },
+      { header: "Unit", key: "unit", width: 10 },
+      { header: "Sales Price", key: "sales_price", width: 15 },
+      { header: "Purchase Price", key: "purchase_price", width: 15 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "HSN Number", key: "hsn_number", width: 15 },
+      { header: "Tax", key: "tax", width: 10 },
+      { header: "Price Type", key: "price_type", width: 15 },
+      { header: "Product Type", key: "product_type", width: 15 },
+    ];
+
+    worksheet.addRows(products);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=products.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Export failed:", error);
+    res.status(500).json({ message: "Failed to export products" });
   }
 };
 
@@ -180,5 +229,6 @@ module.exports = {
   deleteProduct,
   findProductById,
   getAllProducts,
-  uploadExcelData
+  uploadExcelData,
+  exportProductsToExcel,
 };

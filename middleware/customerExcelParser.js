@@ -31,33 +31,32 @@ module.exports = async function excelParser(req, res, next) {
       return res.status(400).json({ error: "Excel/CSV file is empty" });
     }
 
-    // ✅ Header mapping from user-friendly to schema field names
+    // ✅ Header mapping from Excel headers to schema keys
     const headerMap = {
       "Name": "name",
-      "Product Image": "product_image",
-      "Quantity": "quantity",
-      "Default Quantity": "defualt_quantity",
-      "Unit": "unit",
-      "Sales Price": "sales_price",
-      "Purchase Price": "purchase_price",
-      "Category": "category",
-      "HSN Number": "hsn_number",
-      "Tax": "tax",
-      "Price Type": "price_type",
-      "Product Type": "product_type"
+      "Mobile": "mobile",
+      "Email": "email",
+      "Address": "address",
+      "PIN": "pin",
+      "City": "city",
+      "State": "state",
+      "Aadhar Card Number": "aadharCardNumber",
+      "PAN Number": "panNumber",
+      "Company Name": "companyName",
+      "GST Number": "gstNumber"
     };
 
-    // ✅ Convert headers to schema field names
+    // ✅ Normalize header keys
     const normalizedData = rawJson.map(row => {
       const newRow = {};
       for (const key in row) {
-        const mappedKey = headerMap[key] || key; // fallback to original if no mapping
+        const mappedKey = headerMap[key] || key;
         newRow[mappedKey] = row[key];
       }
       return newRow;
     });
 
-    // Add store IDs
+    // ✅ Append store identifiers
     const store_id = req.body.store_id;
     const storeProfile_id = req.body.storeProfile_id;
 

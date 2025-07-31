@@ -4,9 +4,38 @@ Product Route :
 
 curl --location 'http://localhost:5000/store-product/upload-excel' \
 --header 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODgxZDFkMGY5ZDA0M2JjYzQ3NjkzODAiLCJpYXQiOjE3NTM5Mzg3ODMsImV4cCI6MTc1Mzk0NTk4M30.fnlwrCSXl8hqPsqhAnoTd2DBn_P3V0PxVx4xyr-cUKA' \
---form 'excelFile=@"/C:/Users/91798/Downloads/dummy_product_data.csv"' \
+--form 'excelFile=@"/C:/Users/91798/Downloads/products.xlsx"' \
 --form 'schema="Product"' \
 --form 'store_id="64bfa5821a8890ff37d5c9d2"' \
 --form 'storeProfile_id="64c3a4ef7b1b4310559e1ea9"'
 
-Product Bulk import excel 
+2) Product Bulk import excel 
+get code of fronend go out of udhar folder and search for frontend/index.html
+document.getElementById("exportBtn").addEventListener("click", () => {
+  fetch("http://localhost:5000/store-product/export-excel/64bfa5821a8890ff37d5c9d2/64c3a4ef7b1b4310559e1ea9", {
+    method: "GET",
+    headers: {
+      "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODgxZDFkMGY5ZDA0M2JjYzQ3NjkzODAiLCJpYXQiOjE3NTM5Mzg3ODMsImV4cCI6MTc1Mzk0NTk4M30.fnlwrCSXl8hqPsqhAnoTd2DBn_P3V0PxVx4xyr-cUKA",  // Replace with actual token
+      "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to export");
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "products.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    })
+    .catch(error => {
+      console.error("Download error:", error);
+      alert("Export failed.");
+    });
+});

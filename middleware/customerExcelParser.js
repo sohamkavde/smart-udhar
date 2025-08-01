@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const models = require("../utils/schemaMap");
 
-module.exports = async function excelParser(req, res, next) {
+module.exports = async function customerExcelParser(req, res, next) {
   try {
     const schemaName = req.body.schema;
     const Model = models[schemaName];

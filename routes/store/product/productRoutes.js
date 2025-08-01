@@ -32,7 +32,7 @@ router.get("/store-product/product-history/:id", common.tokenmiddleware, asyncHa
 router.get("/store-product/findBy-id/:id", common.tokenmiddleware, asyncHandler(findProductById));
 
 // Excel upload route
-const upload = multer({ dest: "../../../uploads/" });
+const upload = multer({ dest: "../../../assets/uploadProductExcel" });
 router.post("/store-product/upload-excel", common.tokenmiddleware, upload.single("excelFile"), excelParser, uploadExcelData);
 router.get("/store-product/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportProductsToExcel));
 

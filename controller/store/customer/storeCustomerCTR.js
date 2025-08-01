@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const Customer = require("../../../models/store/customer/customer");
 const ExcelJS = require("exceljs");
@@ -60,13 +59,11 @@ const createCustomer = async (req, res) => {
     });
 
     await customer.save();
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message: "Customer created successfully",
-        customer,
-      });
+    return res.status(201).json({
+      success: true,
+      message: "Customer created successfully",
+      customer,
+    });
   } catch (error) {
     console.error("Error creating customer:", error);
     return res
@@ -100,13 +97,11 @@ const updateCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Customer updated",
-        customer: updatedCustomer,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Customer updated",
+      customer: updatedCustomer,
+    });
   } catch (error) {
     console.error("Update error:", error);
     res.status(500).json({ success: false, message: "Server error" });
@@ -129,13 +124,11 @@ const deleteCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Customer deleted successfully",
-        customer: deletedCustomer,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Customer deleted successfully",
+      customer: deletedCustomer,
+    });
   } catch (error) {
     console.error("Error deleting customer:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -170,7 +163,9 @@ const getAllCustomers = async (req, res) => {
   try {
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
-    const customers = await Customer.find({ store_id, storeProfile_id }).sort({ createdAt: -1 });
+    const customers = await Customer.find({ store_id, storeProfile_id }).sort({
+      createdAt: -1,
+    });
 
     res.status(200).json({
       success: true,
@@ -185,7 +180,17 @@ const getAllCustomers = async (req, res) => {
 
 const uploadExcelData = async (req, res) => {
   try {
-    const inserted = await req.Model.insertMany(req.excelData);
+    const inserted = req.excelData;
+    if(inserted.length >= 50) {
+      return res.status(500).json({ error: "Customer count should be equal or below 50" });
+    }
+    for (const row of inserted) {
+      const customer = new Customer({
+        ...row,
+      });
+      await customer.save(); // Will trigger your pre-save hook
+    }
+    
     res.status(200).json({
       message: "Data inserted successfully",
       count: inserted.length,
@@ -196,7 +201,6 @@ const uploadExcelData = async (req, res) => {
     res.status(500).json({ error: "Failed to insert data" });
   }
 };
-
 
 module.exports = {
   createCustomer,

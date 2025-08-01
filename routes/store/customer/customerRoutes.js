@@ -2,6 +2,8 @@ var express = require("express");
 var router = express.Router();
 const asyncHandler = require("../../../middleware/async");
 const common = require("../../../helper/common");
+const customerExcelParser = require("../../../middleware/customerExcelParser");
+const multer = require("multer");
 
 const {
     createCustomer,
@@ -10,7 +12,7 @@ const {
     findCustomerById,
     getAllCustomers,
     uploadExcelData,
-    exportProductsToExcel
+    // exportProductsToExcel
 } = require("../../../controller/store/customer/storeCustomerCTR");
 
 /* GET users listing. */
@@ -27,9 +29,9 @@ router.put("/store-customer/findBy-id/:id", common.tokenmiddleware, asyncHandler
 
 
 // Excel upload route
-const upload = multer({ dest: "../../../uploads/" });
-router.post("/store-customer/upload-excel", common.tokenmiddleware, upload.single("excelFile"), excelParser, uploadExcelData);
-router.get("/store-customer/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportProductsToExcel));
+const upload = multer({ dest: "../../../assets/uploadCustomerExcel" });
+router.post("/store-customer/upload-excel", common.tokenmiddleware, upload.single("excelFile"), customerExcelParser, uploadExcelData);
+// router.get("/store-customer/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportProductsToExcel));
 
 
 

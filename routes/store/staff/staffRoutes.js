@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const asyncHandler = require("../../../middleware/async");
 const common = require("../../../helper/common");
+const uploadStaffImage = require("../../../middleware/staff/uploadImage");
 
 const {
     createStaff,
@@ -17,7 +18,8 @@ router.get("/store-staff", function (req, res, next) {
 });
 
 // Protected Routes
-router.post("/store-staff/create", common.tokenmiddleware, asyncHandler(createStaff));
+router.post("/store-staff/create", common.tokenmiddleware,
+    uploadStaffImage.single("image"), asyncHandler(createStaff));
 router.get("/store-staff/find-all/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(getAllStaff));
 
 router.post("/store-staff/delete/:id", common.tokenmiddleware, asyncHandler(deleteStaff));

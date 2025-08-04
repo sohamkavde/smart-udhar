@@ -7,6 +7,8 @@ const createStaff = async (req, res) => {
   try {
     const data = req.body;
 
+    const imagePath = req.file ? `${req.file.filename}` : "";
+
     const staff = new StoreStaff({
       firstName: data.firstName,
       lastName: data.lastName,
@@ -17,22 +19,25 @@ const createStaff = async (req, res) => {
       city: data.city,
       state: data.state,
       roles: data.roles || [],
-      image: data.image || "",
+      image: imagePath,
       status: data.status || "active",
       online: data.online || false,
-        store_id: data.store_id,
-        storeProfile_id: data.storeProfile_id,
+      store_id: data.store_id,
+      storeProfile_id: data.storeProfile_id,
       createdAt: moment().tz("Asia/Kolkata").toDate(),
     });
 
     await staff.save();
     res.status(201).json({ success: true, message: "Staff created", staff });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
+
 
 // @desc    Get all staff for a store
 // @route   GET /store-staff/find-all/:store_id/:storeProfile_id

@@ -204,15 +204,32 @@ const getAllProducts = async (req, res) => {
   try {
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
-    const products = await Product.find({ store_id, storeProfile_id }).sort({
-      createdAt: -1,
+
+    const page = parseInt(req.body.page) || 1;      // default: page 1
+    const limit = parseInt(req.body.limit) || 10;   // default: 10 items per page
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      Product.find({ store_id, storeProfile_id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments({ store_id, storeProfile_id })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      products
     });
-    res.status(200).json({ success: true, total: products.length, products });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
 
 const searchProducts = async (req, res) => {
   try {

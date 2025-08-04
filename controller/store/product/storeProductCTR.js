@@ -9,8 +9,8 @@ const createProduct = async (req, res) => {
   try {
     const {
       name,
-      quantity, // quantity and defualt_quantity are used for stock management like out of 50 products, how many are available
-      defualt_quantity,
+      quantity, // quantity and min_quantity are used for stock management like out of 50 products, how many are available
+      min_quantity,
       unit,
       sales_price,
       purchase_price,
@@ -28,7 +28,7 @@ const createProduct = async (req, res) => {
       !unit ||
       !category ||
       !quantity ||
-      !defualt_quantity ||
+      !min_quantity ||
       !hsn_number ||
       !sales_price ||
       !purchase_price ||
@@ -296,7 +296,7 @@ const exportProductsToExcel = async (req, res) => {
       { header: "Name", key: "name", width: 20 },
       { header: "Product Image", key: "product_image", width: 30 },
       { header: "Quantity", key: "quantity", width: 10 },
-      { header: "Default Quantity", key: "defualt_quantity", width: 15 },
+      { header: "Min Quantity", key: "min_quantity", width: 15 },
       { header: "Unit", key: "unit", width: 10 },
       { header: "Sales Price", key: "sales_price", width: 15 },
       { header: "Purchase Price", key: "purchase_price", width: 15 },

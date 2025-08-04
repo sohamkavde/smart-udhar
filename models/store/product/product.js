@@ -15,9 +15,13 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
-  defualt_quantity: {
+  min_quantity: {
     type: Number,
     required: true,
+    default: 0,
+  },
+  sold_quantity: {
+    type: Number,
     default: 0,
   },
   unit: {
@@ -48,11 +52,11 @@ const productSchema = new mongoose.Schema({
     default: 0,
   },
   price_type: {
-    type: String, 
+    type: String,
     required: true,
   },
   product_type: {
-    type: String, 
+    type: String,
     required: true,
   },
   store_id: {

@@ -36,7 +36,7 @@ module.exports = async function excelParser(req, res, next) {
       "Name": "name",
       "Product Image": "product_image",
       "Quantity": "quantity",
-      "Default Quantity": "defualt_quantity",
+      "Min Quantity": "min_quantity",
       "Unit": "unit",
       "Sales Price": "sales_price",
       "Purchase Price": "purchase_price",

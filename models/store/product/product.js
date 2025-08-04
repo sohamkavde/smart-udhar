@@ -41,6 +41,7 @@ const productSchema = new mongoose.Schema({
   hsn_number: {
     type: String,
     trim: true,
+    default: "",
   },
   tax: {
     type: Number,

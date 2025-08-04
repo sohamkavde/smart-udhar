@@ -7,8 +7,54 @@ const ExcelJS = require("exceljs"); // Ensure you have exceljs installed for exp
 // Create Product
 const createProduct = async (req, res) => {
   try {
-    const product = new Product(req.body);
-    const savedProduct = await product.save();
+    const {
+      name,
+      quantity, // quantity and defualt_quantity are used for stock management like out of 50 products, how many are available
+      defualt_quantity,
+      unit,
+      sales_price,
+      purchase_price,
+      category,
+      hsn_number,
+      price_type,
+      product_type,
+      store_id,
+      storeProfile_id,
+    } = req.body;
+
+    // Basic validation
+    if (
+      !name ||
+      !unit ||
+      !category ||
+      !quantity ||
+      !defualt_quantity ||
+      !hsn_number ||
+      !sales_price ||
+      !purchase_price ||
+      !price_type ||
+      !product_type ||
+      !store_id ||
+      !storeProfile_id
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided",
+      });
+    }
+
+    // If file uploaded, set image name
+    let product_image = "";
+    if (req.file) {
+      product_image = req.file.filename;
+    }
+
+    const newProduct = new Product({
+      ...req.body,
+      product_image,
+    });
+
+    const savedProduct = await newProduct.save();
     res.status(201).json({
       success: true,
       message: "Product created",
@@ -168,6 +214,44 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const searchProducts = async (req, res) => {
+  try {
+    const { store_id, storeProfile_id, name, category } = req.body;
+
+    if (!store_id || !storeProfile_id) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "store_id and storeProfile_id are required",
+        });
+    }
+
+    const query = {
+      store_id,
+      storeProfile_id,
+    };
+
+    if (name) {
+      query.name = { $regex: name, $options: "i" }; // case-insensitive search
+    }
+
+    if (category) {
+      query.category = { $regex: category, $options: "i" }; // case-insensitive search
+    }
+
+    const products = await Product.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("Error searching products:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
 const uploadExcelData = async (req, res) => {
   try {
     const inserted = await req.Model.insertMany(req.excelData);
@@ -231,4 +315,5 @@ module.exports = {
   getAllProducts,
   uploadExcelData,
   exportProductsToExcel,
+  searchProducts,
 };

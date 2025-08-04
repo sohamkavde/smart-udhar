@@ -3,6 +3,8 @@ const Product = require("../../../models/store/product/product"); // Adjust path
 const ProductHistory = require("../../../models/store/product/productHistory"); // Adjust path as needed
 const mongoose = require("mongoose");
 const ExcelJS = require("exceljs"); // Ensure you have exceljs installed for exporting to Excel
+const PDFDocument = require("pdfkit");
+
 
 // Create Product
 const createProduct = async (req, res) => {
@@ -323,6 +325,98 @@ const exportProductsToExcel = async (req, res) => {
   }
 };
 
+
+ 
+
+const exportProductsToPDF = async (req, res) => {
+  try {
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+    const products = await Product.find({ store_id, storeProfile_id }).lean();
+
+    const doc = new PDFDocument({ margin: 30, size: "A4", layout: "landscape" });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "attachment; filename=products.pdf");
+
+    doc.pipe(res);
+
+    // Title
+    doc.fontSize(16).text("Product List", { align: "center" });
+    doc.moveDown();
+
+    // Column headers and widths
+    const columns = [
+      { key: "name", label: "Name", width: 100 },
+     
+      { key: "quantity", label: "Qty", width: 40 },
+      { key: "min_quantity", label: "Min Qty", width: 80 },
+      { key: "unit", label: "Unit", width: 40 },
+      { key: "sales_price", label: "Sales Price", width: 100 },
+      { key: "purchase_price", label: "Purchase Price", width: 100 },
+      { key: "category", label: "Category", width: 80 },
+      { key: "hsn_number", label: "HSN", width: 80 },
+      { key: "tax", label: "Tax", width: 40 },
+      { key: "price_type", label: "Price Type", width: 60 },
+      { key: "product_type", label: "Type", width: 60 },
+    ];
+
+    const tableTop = doc.y;
+    const rowHeight = 25;
+    let x = doc.page.margins.left;
+    let y = tableTop;
+
+    // Draw table header
+    doc.font("Helvetica-Bold").fontSize(10);
+    columns.forEach(col => {
+      doc.rect(x, y, col.width, rowHeight).stroke();
+      doc.text(col.label, x + 5, y + 8, { width: col.width - 10, align: "left" });
+      x += col.width;
+    });
+
+    y += rowHeight;
+
+    // Draw table rows
+    doc.font("Helvetica").fontSize(9);
+    products.forEach(product => {
+      x = doc.page.margins.left;
+
+      // Check if next row exceeds page height
+      if (y + rowHeight > doc.page.height - doc.page.margins.bottom) {
+        doc.addPage();
+        y = doc.page.margins.top;
+
+        // Redraw headers
+        doc.font("Helvetica-Bold").fontSize(10);
+        columns.forEach(col => {
+          doc.rect(x, y, col.width, rowHeight).stroke();
+          doc.text(col.label, x + 5, y + 8, { width: col.width - 10 });
+          x += col.width;
+        });
+        y += rowHeight;
+        doc.font("Helvetica").fontSize(9);
+      }
+
+      x = doc.page.margins.left;
+      columns.forEach(col => {
+        let text = product[col.key] !== undefined ? String(product[col.key]) : "";
+        doc.rect(x, y, col.width, rowHeight).stroke();
+        doc.text(text, x + 5, y + 8, { width: col.width - 10, height: rowHeight, ellipsis: true });
+        x += col.width;
+      });
+
+      y += rowHeight;
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error("PDF export failed:", error);
+    res.status(500).json({ message: "Failed to export products to PDF" });
+  }
+};
+
+
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -333,4 +427,5 @@ module.exports = {
   uploadExcelData,
   exportProductsToExcel,
   searchProducts,
+  exportProductsToPDF
 };

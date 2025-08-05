@@ -173,7 +173,10 @@ const getAllCustomers = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    const totalCount = await Customer.countDocuments({ store_id, storeProfile_id });
+    const totalCount = await Customer.countDocuments({
+      store_id,
+      storeProfile_id,
+    });
 
     res.status(200).json({
       success: true,
@@ -192,8 +195,10 @@ const getAllCustomers = async (req, res) => {
 const uploadExcelData = async (req, res) => {
   try {
     const inserted = req.excelData;
-    if(inserted.length >= 50) {
-      return res.status(500).json({ error: "Customer count should be equal or below 50" });
+    if (inserted.length >= 50) {
+      return res
+        .status(500)
+        .json({ error: "Customer count should be equal or below 50" });
     }
     for (const row of inserted) {
       const customer = new Customer({
@@ -201,7 +206,7 @@ const uploadExcelData = async (req, res) => {
       });
       await customer.save(); // Will trigger your pre-save hook
     }
-    
+
     res.status(200).json({
       message: "Data inserted successfully",
       count: inserted.length,
@@ -212,9 +217,6 @@ const uploadExcelData = async (req, res) => {
     res.status(500).json({ error: "Failed to insert data" });
   }
 };
-
-
- 
 
 const exportCustomersToExcel = async (req, res) => {
   const { store_id, storeProfile_id } = req.params;
@@ -227,33 +229,37 @@ const exportCustomersToExcel = async (req, res) => {
     }
 
     const headerMap = {
-      "Name": "name",
-      "Mobile": "mobile",
-      "Email": "email",
-      "Address": "address",
-      "PIN": "pin",
-      "City": "city",
-      "State": "state",
+      Name: "name",
+      Mobile: "mobile",
+      Email: "email",
+      Address: "address",
+      PIN: "pin",
+      City: "city",
+      State: "state",
       "Aadhar Card Number": "aadharCardNumber",
       "PAN Number": "panNumber",
       "Company Name": "companyName",
       "GST Number": "gstNumber",
       "Created At": "createdAt",
-      "Updated At": "updatedAt"
+      "Updated At": "updatedAt",
     };
 
     // Remove unwanted fields and convert dates
-    const sanitizedCustomers = customers.map(({ _id, __v, store_id, storeProfile_id, ...rest }) => {
-      const formatted = {};
-      for (const [header, field] of Object.entries(headerMap)) {
-        let value = rest[field];
-        if (value instanceof Date) {
-          value = moment(value).tz("Asia/Kolkata").format("DD-MM-YYYY HH:mm:ss");
+    const sanitizedCustomers = customers.map(
+      ({ _id, __v, store_id, storeProfile_id, ...rest }) => {
+        const formatted = {};
+        for (const [header, field] of Object.entries(headerMap)) {
+          let value = rest[field];
+          if (value instanceof Date) {
+            value = moment(value)
+              .tz("Asia/Kolkata")
+              .format("DD-MM-YYYY HH:mm:ss");
+          }
+          formatted[header] = value || ""; // fallback to empty string
         }
-        formatted[header] = value || ""; // fallback to empty string
+        return formatted;
       }
-      return formatted;
-    });
+    );
 
     const worksheet = XLSX.utils.json_to_sheet(sanitizedCustomers, {
       header: Object.keys(headerMap),
@@ -263,10 +269,7 @@ const exportCustomersToExcel = async (req, res) => {
 
     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=customers.xlsx"
-    );
+    res.setHeader("Content-Disposition", "attachment; filename=customers.xlsx");
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -279,7 +282,45 @@ const exportCustomersToExcel = async (req, res) => {
   }
 };
 
+const searchCustomer = async (req, res) => {
+  try {
+    const { store_id, storeProfile_id } = req.params;
+    const { name } = req.body;
 
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required for search",
+      });
+    }
+
+    const words = name.trim().split(/\s+/);
+    const regexConditions = words.map((word) => ({
+      name: { $regex: word, $options: "i" },
+    }));
+
+    const customers = await Customer.find({
+      store_id,
+      storeProfile_id,
+      $and: regexConditions,
+    });
+
+    if (!customers.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No matching Customer found",
+      });
+    }
+
+    res.status(200).json({ success: true, total: customers.length, customers });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   createCustomer,
@@ -288,5 +329,6 @@ module.exports = {
   findCustomerById,
   getAllCustomers,
   uploadExcelData,
-  exportCustomersToExcel  
+  exportCustomersToExcel,
+  searchCustomer,
 };

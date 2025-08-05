@@ -162,15 +162,25 @@ const findCustomerById = async (req, res) => {
 
 const getAllCustomers = async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.body; // Defaults: page 1, limit 10
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
-    const customers = await Customer.find({ store_id, storeProfile_id }).sort({
-      createdAt: -1,
-    });
+
+    const skip = (page - 1) * limit;
+
+    const customers = await Customer.find({ store_id, storeProfile_id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalCount = await Customer.countDocuments({ store_id, storeProfile_id });
 
     res.status(200).json({
       success: true,
-      total: customers.length,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / limit),
+      totalCustomers: totalCount,
       customers,
     });
   } catch (error) {

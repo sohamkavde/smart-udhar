@@ -29,6 +29,10 @@ const customerSchema = new mongoose.Schema({
     type: Date,
     default: () => moment().tz("Asia/Kolkata").toDate(), // Set to Indian Standard Time
   },
+   updatedAt: {
+    type: Date,
+    default: () => moment().tz("Asia/Kolkata").toDate(),
+  },
 });
 
 // Custom ID generation
@@ -47,6 +51,11 @@ customerSchema.pre("save", async function (next) {
       return next(err);
     }
   }
+  next();
+});
+
+customerSchema.pre("findOneAndUpdate", function (next) {
+  this.set({ updatedAt: moment().tz("Asia/Kolkata").toDate() });
   next();
 });
 

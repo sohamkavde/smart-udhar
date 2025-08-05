@@ -39,3 +39,11 @@ document.getElementById("exportBtn").addEventListener("click", () => {
       alert("Export failed.");
     });
 });
+
+// import customer
+curl --location 'http://localhost:5000/store-customer/upload-excel' \
+--header 'Authorization: Bearer  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODgxZDFkMGY5ZDA0M2JjYzQ3NjkzODAiLCJpYXQiOjE3NTQzNzE4MTcsImV4cCI6MTc1NDM3OTAxN30.lZrXKg6yQ6X3iuH_-do_TbbIeqxH7CL9GNLTa-TyF78' \
+--form 'store_id="6881d1d0f9d043bcc4769380"' \
+--form 'storeProfile_id="6881df346184387bfb89a06a"' \
+--form 'excelFile=@"/C:/Users/91798/Downloads/customer_import_format.csv"' \
+--form 'schema="Customer"'

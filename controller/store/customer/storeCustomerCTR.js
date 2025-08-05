@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Customer = require("../../../models/store/customer/customer");
-const ExcelJS = require("exceljs");
+const XLSX = require("xlsx");
+const moment = require("moment-timezone");
 
 const createCustomer = async (req, res) => {
   try {
@@ -202,6 +203,74 @@ const uploadExcelData = async (req, res) => {
   }
 };
 
+
+ 
+
+const exportCustomersToExcel = async (req, res) => {
+  const { store_id, storeProfile_id } = req.params;
+
+  try {
+    const customers = await Customer.find({ store_id, storeProfile_id }).lean();
+
+    if (!customers || customers.length === 0) {
+      return res.status(404).send("No customers found");
+    }
+
+    const headerMap = {
+      "Name": "name",
+      "Mobile": "mobile",
+      "Email": "email",
+      "Address": "address",
+      "PIN": "pin",
+      "City": "city",
+      "State": "state",
+      "Aadhar Card Number": "aadharCardNumber",
+      "PAN Number": "panNumber",
+      "Company Name": "companyName",
+      "GST Number": "gstNumber",
+      "Created At": "createdAt",
+      "Updated At": "updatedAt"
+    };
+
+    // Remove unwanted fields and convert dates
+    const sanitizedCustomers = customers.map(({ _id, __v, store_id, storeProfile_id, ...rest }) => {
+      const formatted = {};
+      for (const [header, field] of Object.entries(headerMap)) {
+        let value = rest[field];
+        if (value instanceof Date) {
+          value = moment(value).tz("Asia/Kolkata").format("DD-MM-YYYY HH:mm:ss");
+        }
+        formatted[header] = value || ""; // fallback to empty string
+      }
+      return formatted;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(sanitizedCustomers, {
+      header: Object.keys(headerMap),
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=customers.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.send(buffer);
+  } catch (error) {
+    console.error("Export error:", error);
+    res.status(500).send("Server error");
+  }
+};
+
+
+
 module.exports = {
   createCustomer,
   updateCustomer,
@@ -209,5 +278,5 @@ module.exports = {
   findCustomerById,
   getAllCustomers,
   uploadExcelData,
-  // exportProductsToExcel // Uncomment if you implement this function
+  exportCustomersToExcel  
 };

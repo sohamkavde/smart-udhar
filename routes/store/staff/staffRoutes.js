@@ -11,6 +11,8 @@ const {
   deleteStaff,
   findStaffById,
   getAllStaff,
+  findStaffByName,
+  findStaffDetails
 } = require("../../../controller/store/staff/storeStaffCTR");
 
 /* GET staff listing. */
@@ -36,6 +38,7 @@ router.post(
   common.tokenmiddleware,
   asyncHandler(deleteStaff)
 );
+
 router.put(
   "/store-staff/update/:id",
   common.tokenmiddleware,
@@ -46,6 +49,18 @@ router.put(
   "/store-staff/findBy-id/:id",
   common.tokenmiddleware,
   asyncHandler(findStaffById)
+);
+
+router.get(
+  "/store-staff/findBy-name/:store_id/:storeProfile_id",
+  common.tokenmiddleware,
+  asyncHandler(findStaffByName)
+);
+
+router.get(
+  "/store-staff/find-details/:store_id/:storeProfile_id",
+  common.tokenmiddleware,
+  asyncHandler(findStaffDetails)
 );
 
 module.exports = router;

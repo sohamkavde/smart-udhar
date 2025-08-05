@@ -12,7 +12,7 @@ const {
     findCustomerById,
     getAllCustomers,
     uploadExcelData,
-    // exportProductsToExcel
+    exportCustomersToExcel
 } = require("../../../controller/store/customer/storeCustomerCTR");
 
 /* GET users listing. */
@@ -31,7 +31,7 @@ router.put("/store-customer/findBy-id/:id", common.tokenmiddleware, asyncHandler
 // Excel upload route
 const upload = multer({ dest: "../../../assets/uploadCustomerExcel" });
 router.post("/store-customer/upload-excel", common.tokenmiddleware, upload.single("excelFile"), customerExcelParser, uploadExcelData);
-// router.get("/store-customer/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportProductsToExcel));
+router.get("/store-customer/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportCustomersToExcel));
 
 
 

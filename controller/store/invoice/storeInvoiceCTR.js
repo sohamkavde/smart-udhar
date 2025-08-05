@@ -20,15 +20,24 @@ const createInvoice = async (req, res) => {
   }
 };
 
-// Get All Invoices (for logged-in store)
+// Get All Invoices (with pagination)
 const getAllInvoices = async (req, res) => {
   try {
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
 
-    const invoices = await Invoice.find({ store_id, storeProfile_id }).sort({
-      createdAt: -1,
-    });
+    // Default to page 1 and limit 10 if not provided
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch paginated invoices
+    const invoices = await Invoice.find({ store_id, storeProfile_id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count
     const totalCount = await Invoice.countDocuments({
       store_id,
       storeProfile_id,
@@ -38,6 +47,8 @@ const getAllInvoices = async (req, res) => {
       status: "success",
       message: "Invoices fetched successfully",
       total: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
       data: invoices,
     });
   } catch (error) {
@@ -47,6 +58,7 @@ const getAllInvoices = async (req, res) => {
       .json({ status: "error", message: "Internal Server Error" });
   }
 };
+
 
 const getAllInvoicesOfCustomer = async (req, res) => {
   try {

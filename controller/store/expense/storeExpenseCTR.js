@@ -1,4 +1,4 @@
-const Expense = require("../../../models/store/ExpenseModel"); // Adjust path as needed
+const Expense = require("../../../models/store/expense/expense"); // Adjust path as needed
 const moment = require("moment-timezone");
 
 // Create a new expense
@@ -94,10 +94,74 @@ const findExpenseById = async (req, res) => {
   res.status(200).json({ success: true, data: expense });
 };
 
+
+
+const filterExpenses = async (req, res) => {
+  try {
+    const {
+      startDate,
+      endDate,
+      expenseCategory,
+      gstApplicable,
+      paymentMode,
+      store_id,
+      storeProfile_id,
+    } = req.body;
+
+    const filter = {
+      store_id,
+      storeProfile_id,
+    };
+
+    // Date filter
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) {
+        filter.date.$gte = moment.tz(startDate, "Asia/Kolkata").startOf("day").toDate();
+      }
+      if (endDate) {
+        filter.date.$lte = moment.tz(endDate, "Asia/Kolkata").endOf("day").toDate();
+      }
+    }
+
+    // Category filter
+    if (expenseCategory) {
+      filter.expenseCategory = expenseCategory;
+    }
+
+    // GST filter (must be "true" or "false" string in query)
+    if (gstApplicable !== undefined) {
+      filter.gstApplicable = gstApplicable === "true";
+    }
+
+    // Payment mode filter
+    if (paymentMode) {
+      filter.paymentMode = paymentMode;
+    }
+
+    const expenses = await Expense.find(filter).sort({ date: -1 });
+
+    return res.status(200).json({
+      success: true,
+      total: expenses.length,
+      expenses,
+    });
+  } catch (error) {
+    console.error("Error filtering expenses:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createExpense,
   updateExpense,
   deleteExpense,
   findExpenseById,
   getAllExpenses,
+  filterExpenses
 };

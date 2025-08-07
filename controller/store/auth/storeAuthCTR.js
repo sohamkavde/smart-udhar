@@ -45,6 +45,7 @@ const storeRegistration = async (req, res) => {
     return res.status(500).json({
       status: "failed",
       message: "Unable to Register, please try again later",
+      error: error.message,
     });
   }
 };

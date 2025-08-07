@@ -22,7 +22,7 @@ const profileSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  mobile1: {
+  mobile: {
     type: String,
     required: true,
     trim: true,

@@ -9,7 +9,7 @@ const createProfile = async (req, res) => {
       gstNumber,
       address,
       pincode,
-      mobile1,
+      mobile,
       email,
       shortBio,
       industry,
@@ -18,17 +18,23 @@ const createProfile = async (req, res) => {
       linkedInURL,
       instagramURL,
       websiteURL,
-      signatureImage,
-      logoImage,
       store_id,
     } = req.body;
 
-    // Basic validation (can be enhanced)
+    // Extract only filename
+    const signatureImage = req.files["signatureImage"]
+      ? req.files["signatureImage"][0].filename
+      : null;
+
+    const logoImage = req.files["logoImage"]
+      ? req.files["logoImage"][0].filename
+      : null;
+
     if (
       !businessName ||
       !address ||
       !pincode ||
-      !mobile1 ||
+      !mobile ||
       !email ||
       !industry ||
       !store_id
@@ -43,7 +49,7 @@ const createProfile = async (req, res) => {
       gstNumber,
       address,
       pincode,
-      mobile1,
+      mobile,
       email,
       shortBio,
       industry,
@@ -52,8 +58,8 @@ const createProfile = async (req, res) => {
       linkedInURL,
       instagramURL,
       websiteURL,
-      signatureImage,
-      logoImage,
+      signatureImage, // store only filename
+      logoImage, // store only filename
       store_id,
       created_at: moment().tz("Asia/Kolkata").toDate(),
       updated_at: moment().tz("Asia/Kolkata").toDate(),
@@ -80,6 +86,23 @@ const updateProfile = async (req, res) => {
     const profileId = req.params.id;
     const updateData = req.body;
 
+    if (req.files) {
+      if (req.files.signatureImage && req.files.signatureImage.length > 0) {
+        updateData.signatureImage = req.files.signatureImage[0].filename;
+      }
+      if (req.files.logoImage && req.files.logoImage.length > 0) {
+        updateData.logoImage = req.files.logoImage[0].filename;
+      }
+    }
+
+    if (!req.files?.signatureImage?.[0]) {
+      delete updateData.signatureImage;
+    }
+    if (!req.files?.logoImage?.[0]) {
+      delete updateData.logoImage;
+    }
+
+ 
     updateData.updated_at = moment().tz("Asia/Kolkata").toDate();
 
     const updatedProfile = await Profile.findByIdAndUpdate(
@@ -139,7 +162,7 @@ const findProfileById = async (req, res) => {
 const findAllProfiles = async (req, res) => {
   try {
     // :store_id/:storeProfile_id
-     const store_id = req.params.store_id; 
+    const store_id = req.params.store_id;
 
     const profiles = await Profile.find({ store_id }).sort({ created_at: -1 });
     const totalCount = await Profile.countDocuments({ store_id });
@@ -158,8 +181,6 @@ const findAllProfiles = async (req, res) => {
     });
   }
 };
-
-
 
 const deleteProfileById = async (req, res) => {
   try {
@@ -188,7 +209,6 @@ const deleteProfileById = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createProfile,
   updateProfile,
@@ -196,4 +216,3 @@ module.exports = {
   findAllProfiles,
   deleteProfileById,
 };
-

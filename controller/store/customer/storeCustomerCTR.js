@@ -75,8 +75,8 @@ const createCustomer = async (req, res) => {
 
 const updateCustomer = async (req, res) => {
   try {
-    const { _id } = req.body;
-
+    const { id } = req.body;
+    const _id = id;
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
       return res
         .status(400)
@@ -162,7 +162,8 @@ const findCustomerById = async (req, res) => {
 
 const getAllCustomers = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.body; // Defaults: page 1, limit 10
+        const page = parseInt(req.body?.page) || 1;
+    const limit = parseInt(req.body?.limit) || 10; // Defaults: page 1, limit 10
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
 

@@ -1,6 +1,11 @@
-/node_modules 
-node_modules/*
-node_modules
-./node_modules
+node_modules 
+
 
 .env
+assets/uploadCustomerExcel
+assets/uploadProductExcel
+assets/uploadProfile
+assets/uploadProfileImage
+assets/uploadsProduct
+assets/uploadStaffImage
+

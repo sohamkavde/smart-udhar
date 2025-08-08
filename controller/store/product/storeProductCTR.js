@@ -5,7 +5,6 @@ const mongoose = require("mongoose");
 const ExcelJS = require("exceljs"); // Ensure you have exceljs installed for exporting to Excel
 const PDFDocument = require("pdfkit");
 
-
 // Create Product
 const createProduct = async (req, res) => {
   try {
@@ -204,19 +203,19 @@ const findProductById = async (req, res) => {
 // Get All Products
 const getAllProducts = async (req, res) => {
   try {
-    const store_id = req.params.store_id;
-    const storeProfile_id = req.params.storeProfile_id;
+    const { store_id, storeProfile_id } = req.params;
 
-    const page = parseInt(req.body.page) || 1;      // default: page 1
-    const limit = parseInt(req.body.limit) || 10;   // default: 10 items per page
+    // Support both query string and body, fallback to defaults
+    const page = parseInt(req.body?.page) || 1;
+    const limit = parseInt(req.body?.limit) || 10;
     const skip = (page - 1) * limit;
 
     const [products, total] = await Promise.all([
       Product.find({ store_id, storeProfile_id })
-        .sort({ createdAt: -1 })
+        .sort({ created_at: -1 }) // match schema field name
         .skip(skip)
         .limit(limit),
-      Product.countDocuments({ store_id, storeProfile_id })
+      Product.countDocuments({ store_id, storeProfile_id }),
     ]);
 
     res.status(200).json({
@@ -224,7 +223,7 @@ const getAllProducts = async (req, res) => {
       total,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
-      products
+      products,
     });
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -232,18 +231,15 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-
 const searchProducts = async (req, res) => {
   try {
     const { store_id, storeProfile_id, name, category } = req.body;
 
     if (!store_id || !storeProfile_id) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "store_id and storeProfile_id are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "store_id and storeProfile_id are required",
+      });
     }
 
     const query = {
@@ -325,16 +321,17 @@ const exportProductsToExcel = async (req, res) => {
   }
 };
 
-
- 
-
 const exportProductsToPDF = async (req, res) => {
   try {
     const store_id = req.params.store_id;
     const storeProfile_id = req.params.storeProfile_id;
     const products = await Product.find({ store_id, storeProfile_id }).lean();
 
-    const doc = new PDFDocument({ margin: 30, size: "A4", layout: "landscape" });
+    const doc = new PDFDocument({
+      margin: 30,
+      size: "A4",
+      layout: "landscape",
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "attachment; filename=products.pdf");
@@ -348,7 +345,7 @@ const exportProductsToPDF = async (req, res) => {
     // Column headers and widths
     const columns = [
       { key: "name", label: "Name", width: 100 },
-     
+
       { key: "quantity", label: "Qty", width: 40 },
       { key: "min_quantity", label: "Min Qty", width: 80 },
       { key: "unit", label: "Unit", width: 40 },
@@ -368,9 +365,12 @@ const exportProductsToPDF = async (req, res) => {
 
     // Draw table header
     doc.font("Helvetica-Bold").fontSize(10);
-    columns.forEach(col => {
+    columns.forEach((col) => {
       doc.rect(x, y, col.width, rowHeight).stroke();
-      doc.text(col.label, x + 5, y + 8, { width: col.width - 10, align: "left" });
+      doc.text(col.label, x + 5, y + 8, {
+        width: col.width - 10,
+        align: "left",
+      });
       x += col.width;
     });
 
@@ -378,7 +378,7 @@ const exportProductsToPDF = async (req, res) => {
 
     // Draw table rows
     doc.font("Helvetica").fontSize(9);
-    products.forEach(product => {
+    products.forEach((product) => {
       x = doc.page.margins.left;
 
       // Check if next row exceeds page height
@@ -388,7 +388,7 @@ const exportProductsToPDF = async (req, res) => {
 
         // Redraw headers
         doc.font("Helvetica-Bold").fontSize(10);
-        columns.forEach(col => {
+        columns.forEach((col) => {
           doc.rect(x, y, col.width, rowHeight).stroke();
           doc.text(col.label, x + 5, y + 8, { width: col.width - 10 });
           x += col.width;
@@ -398,10 +398,15 @@ const exportProductsToPDF = async (req, res) => {
       }
 
       x = doc.page.margins.left;
-      columns.forEach(col => {
-        let text = product[col.key] !== undefined ? String(product[col.key]) : "";
+      columns.forEach((col) => {
+        let text =
+          product[col.key] !== undefined ? String(product[col.key]) : "";
         doc.rect(x, y, col.width, rowHeight).stroke();
-        doc.text(text, x + 5, y + 8, { width: col.width - 10, height: rowHeight, ellipsis: true });
+        doc.text(text, x + 5, y + 8, {
+          width: col.width - 10,
+          height: rowHeight,
+          ellipsis: true,
+        });
         x += col.width;
       });
 
@@ -415,8 +420,6 @@ const exportProductsToPDF = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   createProduct,
   updateProduct,
@@ -427,5 +430,5 @@ module.exports = {
   uploadExcelData,
   exportProductsToExcel,
   searchProducts,
-  exportProductsToPDF
+  exportProductsToPDF,
 };

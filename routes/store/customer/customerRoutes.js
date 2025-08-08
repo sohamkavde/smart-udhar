@@ -27,7 +27,7 @@ router.get("/store-customer/find-all/:store_id/:storeProfile_id", common.tokenmi
 
 router.post("/store-customer/delete/:id", common.tokenmiddleware, asyncHandler(deleteCustomer));
 router.put("/store-customer/update", common.tokenmiddleware, asyncHandler(updateCustomer));
-router.put("/store-customer/findBy-id/:id", common.tokenmiddleware, asyncHandler(findCustomerById));
+router.get("/store-customer/findBy-id/:id", common.tokenmiddleware, asyncHandler(findCustomerById));
 router.get("/store-customer/search/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(searchCustomer));
 
 

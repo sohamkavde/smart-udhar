@@ -163,26 +163,56 @@ const updateMilestones = async (req, res) => {
       });
     }
 
-    // Compare milestones except status
-    const milestonesMatch =
-      updatedInvoice.milestones.length === milestones.length &&
-      updatedInvoice.milestones.every((oldM, i) => {
-        const newM = milestones[i];
-        // Compare each property except status
-        return Object.keys(oldM.toObject ? oldM.toObject() : oldM).every(
-          (key) => {
-            if (key === "status") return true; // skip status
-            return oldM[key] === newM[key];
-          }
-        );
-      });
+    let mismatches = [];
 
-    if (!milestonesMatch) {
+    if (updatedInvoice.milestones.length !== milestones.length) {
+      mismatches.push({
+        field: "milestones.length",
+        oldValue: updatedInvoice.milestones.length,
+        newValue: milestones.length,
+      });
+    } else {
+      updatedInvoice.milestones.forEach((oldM, i) => {
+        const newM = milestones[i];
+        const oldObj = oldM.toObject ? oldM.toObject() : oldM;
+
+        Object.keys(oldObj).forEach((key) => {
+          if (key === "status" || key === "_id") return; // skip status and _id
+
+          let oldVal = oldObj[key];
+          let newVal = newM[key];
+
+          // Normalize Dates for accurate comparison
+          if (
+            (oldVal instanceof Date ||
+              new Date(oldVal).toString() !== "Invalid Date") &&
+            (newVal instanceof Date ||
+              new Date(newVal).toString() !== "Invalid Date")
+          ) {
+            oldVal = new Date(oldVal).getTime();
+            newVal = new Date(newVal).getTime();
+          }
+
+          if (String(oldVal) !== String(newVal)) {
+            mismatches.push({
+              milestoneIndex: i,
+              field: key,
+              oldValue: oldObj[key],
+              newValue: newM[key],
+            });
+          }
+        });
+      });
+    }
+
+    if (mismatches.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Data mismatch in milestones",
+        mismatches,
       });
     }
+
     // Update milestones in database
     updatedInvoice.milestones = milestones;
     updatedInvoice.updatedAt = new Date();
@@ -231,7 +261,7 @@ const updateMilestones = async (req, res) => {
           }
         });
 
-        await updatedInvoice.save();                                                                                                                                                                                                                                             
+        await updatedInvoice.save();
       }
     }
 

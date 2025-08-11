@@ -81,12 +81,16 @@ const profileSchema = new mongoose.Schema({
     required: true,
   },
   today_collection: {
-    type: String,
-    default: "0",
+    type: Number,
+    default: 0,
   },
   total_collection: {
-    type: String,
-    default: "0",
+    type: Number,
+    default: 0,
+  },
+  last_reset: {
+    type: Date,
+    default: () => moment().tz("Asia/Kolkata").startOf("day").toDate(),
   },
   created_at: {
     type: Date,

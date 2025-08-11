@@ -26,7 +26,7 @@ router.get("/store-invoice/find-all/:store_id/:storeProfile_id", common.tokenmid
 router.post("/store-invoice/delete/:id", common.tokenmiddleware, asyncHandler(deleteInvoice));
 router.put("/store-invoice/update/:id", common.tokenmiddleware, asyncHandler(updateInvoice));
 router.get("/store-invoice/findBy-id/:id", common.tokenmiddleware, asyncHandler(findInvoiceById));
-router.get("/store-invoice/findBy-idd", common.tokenmiddleware, asyncHandler(filterInvoices));
+router.get("/store-invoice/filter", common.tokenmiddleware, asyncHandler(filterInvoices));
 
 
 // Customer-specific routes

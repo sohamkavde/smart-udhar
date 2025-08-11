@@ -1,11 +1,37 @@
 const Invoice = require("../../../models/store/invoice/invoice");
+const Profile = require("../../../models/store/profile/profile");
 const moment = require("moment-timezone");
 // Create Invoice
 const createInvoice = async (req, res) => {
   try {
     const invoiceData = req.body;
 
+    // 1. Create invoice
     const newInvoice = await Invoice.create(invoiceData);
+
+    // 2. If payment mode is cash, update collections
+    if (invoiceData.paymentMode === "cash") {
+      const storeProfile = await Profile.findById(invoiceData.storeProfile_id);
+
+      if (storeProfile) {
+        const today = moment().tz("Asia/Kolkata").startOf("day");
+
+        // Reset if last reset was before today
+        if (
+          !storeProfile.last_reset ||
+          moment(storeProfile.last_reset).isBefore(today)
+        ) {
+          storeProfile.today_collection = 0;
+          storeProfile.last_reset = today.toDate();
+        }
+
+        // Add today's collection
+        storeProfile.today_collection += Number(invoiceData.total || 0);
+        storeProfile.total_collection += Number(invoiceData.total || 0);
+
+        await storeProfile.save();
+      }
+    }
 
     return res.status(201).json({
       status: "success",
@@ -113,6 +139,41 @@ const updateMilestones = async (req, res) => {
       .json({ success: false, message: "Invoice not found" });
   }
 
+  // 2. Apply collection update logic for debt recovery
+  if (updatedInvoice.paymentMode === "debt") {
+    const paidMilestones = milestones.filter((m) => m.status === "Paid");
+
+    if (paidMilestones.length > 0) {
+      const storeProfile = await Profile.findById(
+        updatedInvoice.storeProfile_id
+      );
+
+      if (storeProfile) {
+        const today = moment().tz("Asia/Kolkata").startOf("day");
+
+        // Daily reset check
+        if (
+          !storeProfile.last_reset ||
+          moment(storeProfile.last_reset).isBefore(today)
+        ) {
+          storeProfile.today_collection = 0;
+          storeProfile.last_reset = today.toDate();
+        }
+
+        // Add recovered debt amounts
+        let paidAmount = paidMilestones.reduce(
+          (sum, m) => sum + (m.amount || 0),
+          0
+        );
+
+        storeProfile.today_collection += paidAmount;
+        storeProfile.total_collection += paidAmount;
+
+        await storeProfile.save();
+      }
+    }
+  }
+
   res.status(200).json({ success: true, data: updatedInvoice });
 };
 
@@ -197,8 +258,6 @@ const deleteInvoice = async (req, res) => {
 
 const filterInvoices = async (req, res) => {
   try {
-    
-
     const { filterType } = req.query; // filterType: overdue, dueSoon, paid, thisWeek
 
     // Get today's date in IST

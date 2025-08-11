@@ -6,6 +6,8 @@ exports.tokenmiddleware = (req, res, next) => {
         return res.status(401).send('unauthorized')
     }
     let token = req.headers.authorization; 
+    console.log("Token:", token);
+    
 
     if (!token) {
         return res.status(401).send('unauthorized')

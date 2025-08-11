@@ -59,7 +59,6 @@ const getAllInvoices = async (req, res) => {
   }
 };
 
-
 const getAllInvoicesOfCustomer = async (req, res) => {
   try {
     const customerId = req.params.customer_id;
@@ -194,6 +193,73 @@ const deleteInvoice = async (req, res) => {
   }
 };
 
+//filter based on due date
+
+const filterInvoices = async (req, res) => {
+  try {
+    
+
+    const { filterType } = req.query; // filterType: overdue, dueSoon, paid, thisWeek
+
+    // Get today's date in IST
+    const today = moment().tz("Asia/Kolkata").startOf("day");
+    const startOfWeek = moment(today).startOf("week");
+    const endOfWeek = moment(today).endOf("week");
+    const threeDaysFromNow = moment(today).add(6, "days").endOf("day");
+
+    let matchCondition = {};
+
+    switch (filterType) {
+      case "overdue":
+        matchCondition = {
+          "milestones.dueDate": { $lt: today.toDate() },
+          "milestones.status": { $ne: "Paid" },
+        };
+        break;
+
+      case "dueSoon":
+        matchCondition = {
+          "milestones.dueDate": {
+            $gte: today.toDate(),
+            $lte: threeDaysFromNow.toDate(),
+          },
+          "milestones.status": { $ne: "Paid" },
+        };
+        break;
+
+      case "paid":
+        matchCondition = {
+          "milestones.status": "Paid",
+        };
+        break;
+
+      case "thisWeek":
+        matchCondition = {
+          "milestones.dueDate": {
+            $gte: startOfWeek.toDate(),
+            $lte: endOfWeek.toDate(),
+          },
+        };
+        break;
+
+      default:
+        return res.status(400).json({ error: "Invalid filter type" });
+    }
+
+    const invoices = await Invoice.find(matchCondition);
+
+    res.status(200).json({
+      status: "success",
+      message: "Due Date Invoice fetched successfully",
+      count: invoices.length,
+      data: invoices,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+};
+
 module.exports = {
   createInvoice,
   updateInvoice,
@@ -202,4 +268,5 @@ module.exports = {
   getAllInvoices,
   getAllInvoicesOfCustomer,
   updateMilestones,
+  filterInvoices,
 };

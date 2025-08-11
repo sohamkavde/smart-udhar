@@ -68,17 +68,25 @@ const profileSchema = new mongoose.Schema({
     default: "",
   },
   signatureImage: {
-    type: String, 
+    type: String,
     required: false,
   },
   logoImage: {
-    type: String, 
+    type: String,
     required: false,
   },
   store_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "store", 
+    ref: "store",
     required: true,
+  },
+  today_collection: {
+    type: String,
+    default: "0",
+  },
+  total_collection: {
+    type: String,
+    default: "0",
   },
   created_at: {
     type: Date,

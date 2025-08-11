@@ -21,6 +21,10 @@ const milestoneSchema = new mongoose.Schema({
   paymentMode: String,
   dueDate: Date,
   status: String,
+  counted:{
+    type: Boolean,
+    default: false,
+  }
 });
 
 const invoiceSchema = new mongoose.Schema({

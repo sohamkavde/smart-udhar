@@ -5,6 +5,13 @@ const moment = require("moment-timezone");
 const createInvoice = async (req, res) => {
   try {
     const invoiceData = req.body;
+    // if paymentMethod is cash then we can not allow milestones as it is part of debt recovery
+    if (invoiceData.paymentMode === "cash" && invoiceData.milestones) {
+      return res.status(400).json({
+        status: "error",
+        message: "Milestones are not allowed for cash payments",
+      });
+    }
 
     // 1. Create invoice
     const newInvoice = await Invoice.create(invoiceData);
@@ -110,71 +117,135 @@ const getAllInvoicesOfCustomer = async (req, res) => {
   }
 };
 
-// @desc    Update milestones for a given invoice
+// @desc    Do not change any data in milestones except status. every related information will be come from db. Only send status == paid for paid milestones under milestones array object
 // @route   PUT /api/invoice/:id/milestones
 const updateMilestones = async (req, res) => {
-  const _id = req.params.id;
-  const { milestones } = req.body;
+  try {
+    const _id = req.params.id;
+    const { milestones } = req.body;
 
-  if (!Array.isArray(milestones)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Milestones must be an array" });
-  }
+    if (!_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice ID is required",
+      });
+    }
 
-  const updatedInvoice = await Invoice.findByIdAndUpdate(
-    _id,
-    {
-      $set: {
-        milestones: milestones,
-        updatedAt: moment().tz("Asia/Kolkata").toDate(),
-      },
-    },
-    { new: true }
-  );
+    if (!Array.isArray(milestones)) {
+      return res.status(400).json({
+        success: false,
+        message: "Milestones must be an array",
+      });
+    }
 
-  if (!updatedInvoice) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Invoice not found" });
-  }
-
-  // 2. Apply collection update logic for debt recovery
-  if (updatedInvoice.paymentMode === "debt") {
-    const paidMilestones = milestones.filter((m) => m.status === "Paid");
-
-    if (paidMilestones.length > 0) {
-      const storeProfile = await Profile.findById(
-        updatedInvoice.storeProfile_id
-      );
-
-      if (storeProfile) {
-        const today = moment().tz("Asia/Kolkata").startOf("day");
-
-        // Daily reset check
-        if (
-          !storeProfile.last_reset ||
-          moment(storeProfile.last_reset).isBefore(today)
-        ) {
-          storeProfile.today_collection = 0;
-          storeProfile.last_reset = today.toDate();
-        }
-
-        // Add recovered debt amounts
-        let paidAmount = paidMilestones.reduce(
-          (sum, m) => sum + (m.amount || 0),
-          0
-        );
-
-        storeProfile.today_collection += paidAmount;
-        storeProfile.total_collection += paidAmount;
-
-        await storeProfile.save();
+    for (const m of milestones) {
+      if (!m.status) {
+        return res.status(400).json({
+          success: false,
+          message: "Each milestone must have a status",
+        });
+      }
+      if (typeof m.amount !== "number") {
+        return res.status(400).json({
+          success: false,
+          message: "Each milestone must have a numeric amount",
+        });
       }
     }
-  }
 
-  res.status(200).json({ success: true, data: updatedInvoice });
+    // First update milestones and get updated invoice
+    const updatedInvoice = await Invoice.findById(_id);
+
+    if (!updatedInvoice) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
+    }
+
+    // Compare milestones except status
+    const milestonesMatch =
+      updatedInvoice.milestones.length === milestones.length &&
+      updatedInvoice.milestones.every((oldM, i) => {
+        const newM = milestones[i];
+        // Compare each property except status
+        return Object.keys(oldM.toObject ? oldM.toObject() : oldM).every(
+          (key) => {
+            if (key === "status") return true; // skip status
+            return oldM[key] === newM[key];
+          }
+        );
+      });
+
+    if (!milestonesMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Data mismatch in milestones",
+      });
+    }
+    // Update milestones in database
+    updatedInvoice.milestones = milestones;
+    updatedInvoice.updatedAt = new Date();
+    await updatedInvoice.save();
+
+    // Debt recovery logic
+    if (updatedInvoice.paymentMode === "debt") {
+      // Only unpaid before & not counted yet
+      const paidMilestones = updatedInvoice.milestones.filter(
+        (m) => String(m.status).toLowerCase() === "paid" && !m.counted
+      );
+
+      if (paidMilestones.length > 0) {
+        const storeProfile = await Profile.findById(
+          updatedInvoice.storeProfile_id
+        );
+
+        if (storeProfile) {
+          const today = moment().tz("Asia/Kolkata").startOf("day");
+
+          // Reset if date changed
+          if (
+            !storeProfile.last_reset ||
+            moment(storeProfile.last_reset).isBefore(today)
+          ) {
+            storeProfile.today_collection = 0;
+            storeProfile.last_reset = today.toDate();
+          }
+
+          // Sum up only fresh paid amounts
+          const paidAmount = paidMilestones.reduce(
+            (sum, m) => sum + (m.amount || 0),
+            0
+          );
+
+          storeProfile.today_collection += paidAmount;
+          storeProfile.total_collection += paidAmount;
+
+          await storeProfile.save();
+        }
+
+        // Mark as counted so they won't be added again
+        updatedInvoice.milestones.forEach((m) => {
+          if (String(m.status || "").toLowerCase() === "paid" && !m.counted) {
+            m.counted = true;
+          }
+        });
+
+        await updatedInvoice.save();                                                                                                                                                                                                                                             
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: updatedInvoice,
+    });
+  } catch (error) {
+    console.error("Update Milestones Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 };
 
 // Find Invoice by ID

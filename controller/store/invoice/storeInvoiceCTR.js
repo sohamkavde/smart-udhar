@@ -1,6 +1,8 @@
 const Invoice = require("../../../models/store/invoice/invoice");
 const Profile = require("../../../models/store/profile/profile");
 const moment = require("moment-timezone");
+const PDFDocument = require("pdfkit-table");
+
 // Create Invoice
 const createInvoice = async (req, res) => {
   try {
@@ -119,7 +121,7 @@ const getAllInvoicesOfCustomer = async (req, res) => {
 
 // @desc    Do not change any data in milestones except status. every related information will be come from db. Only send status == paid for paid milestones under milestones array object
 // @route   PUT /api/invoice/:id/milestones
-const updateMilestones = async (req, res) => {
+const paidMilestones = async (req, res) => {
   try {
     const _id = req.params.id;
     const { milestones } = req.body;
@@ -420,6 +422,119 @@ const filterInvoices = async (req, res) => {
   }
 };
 
+const exportInvoicesPDF = async (req, res) => {
+  try {
+    const { filterType } = req.query;
+
+    const today = moment().tz("Asia/Kolkata").startOf("day");
+    const startOfWeek = moment(today).startOf("week");
+    const endOfWeek = moment(today).endOf("week");
+    const threeDaysFromNow = moment(today).add(6, "days").endOf("day");
+
+    let matchCondition = {};
+    switch (filterType) {
+      case "overdue":
+        matchCondition = {
+          "milestones.dueDate": { $lt: today.toDate() },
+          "milestones.status": { $not: /^Paid$/i },
+        };
+        break;
+      case "dueSoon":
+        matchCondition = {
+          "milestones.dueDate": {
+            $gte: today.toDate(),
+            $lte: threeDaysFromNow.toDate(),
+          },
+          "milestones.status": { $not: /^Paid$/i },
+        };
+        break;
+      case "paid":
+        matchCondition = { "milestones.status": "Paid" };
+        break;
+      case "thisWeek":
+        matchCondition = {
+          "milestones.dueDate": {
+            $gte: startOfWeek.toDate(),
+            $lte: endOfWeek.toDate(),
+          },
+        };
+        break;
+      default:
+        matchCondition = {};
+    }
+
+    const invoices = await Invoice.find(matchCondition).lean();
+
+    // Create PDF
+    const doc = new PDFDocument({ margin: 30, size: "A4" });
+    res.setHeader("Content-Disposition", 'attachment; filename="invoices.pdf"');
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    // Title
+    doc.fontSize(18).text("Invoices Report", { align: "center" });
+    doc.moveDown();
+
+    // Prepare table rows from JSON
+    const tableRows = [];
+
+    invoices.forEach((invoice) => {
+      const milestones = invoice.milestones || [];
+
+      milestones.forEach((milestone, index) => {
+        const nextMilestone = milestones[index + 1] || null; // next in queue
+
+        tableRows.push([
+          invoice.name || "-",
+          invoice.phone || "-",
+          `Rs. ${milestone.amount || 0}`,
+          milestone.dueDate
+            ? moment(milestone.dueDate).format("DD MMM YYYY")
+            : "-",
+          nextMilestone
+            ? `Rs. ${nextMilestone.amount} by ${moment(
+                nextMilestone.dueDate
+              ).format("DD MMM")}`
+            : "-",
+          milestone.status.toUpperCase() == "Paid".toUpperCase()
+            ? "Paid"
+            : filterType
+            ? filterType.charAt(0).toUpperCase() +
+              filterType.slice(1).toLowerCase()
+            : "All",
+        ]);
+      });
+    });
+
+    // Table definition
+    const table = {
+      headers: [
+        "Customer Name",
+        "Mobile Number",
+        "Pending Amount",
+        "Due Date",
+        "Next Milestone",
+        "Status",
+      ],
+      rows: tableRows,
+    };
+
+    // Render table with styling
+    await doc.table(table, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(12),
+      prepareRow: (row, i) => doc.font("Helvetica").fontSize(10),
+      padding: 5,
+      columnSpacing: 5,
+      width: 520,
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to export PDF" });
+  }
+};
+
 module.exports = {
   createInvoice,
   updateInvoice,
@@ -427,6 +542,7 @@ module.exports = {
   findInvoiceById,
   getAllInvoices,
   getAllInvoicesOfCustomer,
-  updateMilestones,
+  paidMilestones,
   filterInvoices,
+  exportInvoicesPDF,
 };

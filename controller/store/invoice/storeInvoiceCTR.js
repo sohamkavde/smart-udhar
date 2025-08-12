@@ -1,5 +1,6 @@
 const Invoice = require("../../../models/store/invoice/invoice");
 const Profile = require("../../../models/store/profile/profile");
+const Product = require("../../../models/store/product/product");
 const moment = require("moment-timezone");
 const PDFDocument = require("pdfkit-table");
 
@@ -8,6 +9,35 @@ const createInvoice = async (req, res) => {
   try {
     const invoiceData = req.body;
     // if paymentMethod is cash then we can not allow milestones as it is part of debt recovery
+
+    const productArr = invoiceData.products;
+
+    const arrProductDb = [];
+    for (const product of productArr) {
+      if (product.productId && product.productId.trim()) {
+        const productFromDb = await Product.findById({
+          _id: product.productId,
+        });
+
+        if (!productFromDb) {
+          return res.status(400).json({
+            status: "error",
+            message: `Product with ID ${product.productId} does not exist`,
+          });
+        }
+
+        if (productFromDb.quantity < product.quantity) {
+          return res.status(400).json({
+            status: "error",
+            message: `Insufficient stock for product ${productFromDb.name}. Available: ${productFromDb.quantity}, Requested: ${product.quantity}`,
+          });
+        }
+        arrProductDb.push(productFromDb);
+      }
+    }
+
+   
+
     if (invoiceData.paymentMode === "cash" && invoiceData.milestones) {
       return res.status(400).json({
         status: "error",
@@ -42,6 +72,12 @@ const createInvoice = async (req, res) => {
       }
     }
 
+     let i = 0;
+    for (const arrProduct of arrProductDb) { 
+        arrProduct.quantity -= productArr[i++].qty;
+        await arrProduct.save(); 
+    }
+    
     return res.status(201).json({
       status: "success",
       message: "Invoice created successfully",

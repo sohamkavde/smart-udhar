@@ -1,5 +1,6 @@
 const Expense = require("../../../models/store/expense/expense"); // Adjust path as needed
 const moment = require("moment-timezone");
+const mongoose = require("mongoose"); 
 
 // Create a new expense
 const createExpense = async (req, res) => {
@@ -157,11 +158,120 @@ const filterExpenses = async (req, res) => {
 };
 
 
+const exportExpenses = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let query = {};
+
+    if (startDate && endDate) {
+      query.date = {
+        $gte: moment(startDate).startOf("day").toDate(),
+        $lte: moment(endDate).endOf("day").toDate(),
+      };
+    }
+
+    const expenses = await Expense.find(query)
+      .populate("store_id", "storeName")
+      .populate("storeProfile_id", "profileName")
+      .lean();
+
+    if (!expenses.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No expenses found for the given criteria",
+      });
+    }
+
+    const formattedData = expenses.map((exp) => ({
+      Date: moment(exp.date).format("DD MMM YYYY"),
+      Category: exp.expenseCategory,
+      Item: exp.itemName,
+      Amount: exp.amount,
+      GST: exp.gstApplicable ? "18%" : "–",
+      PaymentMode: exp.paymentMode,
+      Vendor: exp.vendorName || "N/A",
+      Store: exp.store_id?.storeName || "N/A",
+      StoreProfile: exp.storeProfile_id?.profileName || "N/A",
+      NotesOrBill: exp.notesOrBill || "N/A",
+    }));
+
+    res.locals.exportData = {
+      data: formattedData,
+      fileName: "Expenses",
+      sheetName: "Expense List",
+    };
+
+    next();
+  } catch (error) {
+    console.error("Export Controller Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to export expenses",
+      error: error.message,
+    });
+  }
+};
+
+const exportExpensesPDF = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let query = {};
+
+    if (startDate && endDate) {
+      query.date = {
+        $gte: moment(startDate).startOf("day").toDate(),
+        $lte: moment(endDate).endOf("day").toDate(),
+      };
+    }
+
+    const expenses = await Expense.find(query)
+      .populate("store_id", "storeName")
+      .populate("storeProfile_id", "profileName")
+      .lean();
+
+    if (!expenses.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No expenses found for the given criteria",
+      });
+    }
+
+    const formattedData = expenses.map((exp) => ({
+      Date: moment(exp.date).format("DD MMM YYYY"),
+      Category: exp.expenseCategory,
+      Item: exp.itemName,
+      Amount: exp.amount,
+      GST: exp.gstApplicable ? "18%" : "–",
+      PaymentMode: exp.paymentMode,
+      Vendor: exp.vendorName || "N/A",
+      Store: exp.store_id?.storeName || "N/A",
+      StoreProfile: exp.storeProfile_id?.profileName || "N/A",
+      NotesOrBill: exp.notesOrBill || "N/A",
+    }));
+
+    res.locals.exportData = {
+      data: formattedData,
+      fileName: "Expenses",
+      sheetName: "Expense List",
+    };
+
+    next();
+  } catch (error) {
+    console.error("Export Controller Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to export expenses",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   createExpense,
   updateExpense,
   deleteExpense,
   findExpenseById,
   getAllExpenses,
-  filterExpenses
+  filterExpenses,
+  exportExpenses,
+  exportExpensesPDF
 };

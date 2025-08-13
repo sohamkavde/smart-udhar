@@ -41,12 +41,12 @@ const expenseSchema = new mongoose.Schema({
   },
   store_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Store",
+    ref: "store",
     required: true,
   },
   storeProfile_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "StoreProfile",
+    ref: "storeProfile",
     required: true,
   },
   createdAt: {

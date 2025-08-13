@@ -13,6 +13,7 @@ const storeCustomerRoutes   = require('./routes/store/customer/customerRoutes');
 const storeProductRoutes   = require('./routes/store/product/productRoutes');
 const storeInvoiceRoutes   = require('./routes/store/invoice/invoiceRoute');
 const storeStaffRoutes   = require('./routes/store/staff/staffRoutes');
+const storeExpenseRoutes   = require('./routes/store/expense/expenseRoutes');
 
 // const userRoutes   = require('./routes/userRoutes');
 // const storeRoutes   = require('./routes/storeRoutes');
@@ -45,6 +46,7 @@ app.use(storeCustomerRoutes)
 app.use(storeProductRoutes)
 app.use(storeInvoiceRoutes)
 app.use(storeStaffRoutes)
+app.use(storeExpenseRoutes)
 
 
 const PORT = process.env.PORT || 5000;

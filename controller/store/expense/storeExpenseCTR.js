@@ -47,7 +47,7 @@ const getAllExpenses = async (req, res) => {
     storeProfile_id
   }).sort({ date: -1 });
 
-  res.status(200).json({ success: true, data: expenses });
+  res.status(200).json({ success: true,total:expenses.length, data: expenses });
 };
 
 // Update an expense

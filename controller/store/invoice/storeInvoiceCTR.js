@@ -1,6 +1,9 @@
-const Invoice = require("../../../models/store/invoice/invoice");
-const Profile = require("../../../models/store/profile/profile");
-const Product = require("../../../models/store/product/product");
+const path = require("path");
+
+const Invoice = require(path.join(__dirname, "../../../models/store/invoice/invoice"));
+const Profile = require(path.join(__dirname, "../../../models/store/profile/profile"));
+const Product = require(path.join(__dirname, "../../../models/store/product/product"));
+
 const moment = require("moment-timezone");
 const PDFDocument = require("pdfkit-table");
 

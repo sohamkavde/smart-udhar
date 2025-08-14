@@ -1,5 +1,7 @@
 const { default: mongoose } = require("mongoose");
-const StoreStaff = require("../../../models/store/staff/storeStaffModel");
+const path = require("path");
+const StoreStaff = require(path.join(__dirname, "../../../models/store/staff/storeStaffModel"));
+
 const moment = require("moment-timezone");
 
 // @desc    Create staff

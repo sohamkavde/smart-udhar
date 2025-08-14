@@ -1,4 +1,6 @@
-const storeModel = require("../../../models/store/auth/store");
+const path = require("path");
+
+const storeModel = require(path.join(__dirname,"../../../models/store/auth/store"));
 
 const jwt = require("jsonwebtoken");
 const jwt_secret = process.env.JWT_TOKEN_SECRET;

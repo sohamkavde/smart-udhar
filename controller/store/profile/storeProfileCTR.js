@@ -1,4 +1,6 @@
-const Profile = require("../../../models/store/profile/profile");
+const path = require("path");
+const Profile = require(path.join(__dirname, "../../../models/store/profile/profile"));
+
 const moment = require("moment-timezone");
 
 // Create Profile

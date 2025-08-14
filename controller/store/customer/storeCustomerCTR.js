@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const Customer = require("../../../models/store/customer/customer");
+const path = require("path");
+const Customer = require(path.join(__dirname, "../../../models/store/customer/customer"));
 const XLSX = require("xlsx");
 const moment = require("moment-timezone");
 

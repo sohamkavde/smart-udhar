@@ -1,4 +1,5 @@
-const Expense = require("../../../models/store/expense/expense"); // Adjust path as needed
+const path = require("path");
+const Expense = require(path.join(__dirname,"../../../models/store/expense/expense")); // Adjust path as needed
 const moment = require("moment-timezone");
 const mongoose = require("mongoose"); 
 

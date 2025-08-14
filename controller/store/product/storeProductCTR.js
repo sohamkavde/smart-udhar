@@ -1,7 +1,7 @@
 const path = require("path");
 
-const Product = require(path.join(__dirname,"../../../models/store/product/product")); // Adjust path as needed
-const ProductHistory = require(path.join(__dirname,"../../../models/store/product/productHistory")); // Adjust path as needed
+const Product = require(path.join(__dirname,"../../../models/store/product/Product")); // Adjust path as needed
+const ProductHistory = require(path.join(__dirname,"../../../models/store/product/ProductHistory")); // Adjust path as needed
 
 const mongoose = require("mongoose");
 const ExcelJS = require("exceljs"); // Ensure you have exceljs installed for exporting to Excel

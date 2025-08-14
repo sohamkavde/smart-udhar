@@ -4,6 +4,7 @@ const asyncHandler = require("../../../middleware/async");
 const common = require("../../../helper/common");
 const customerExcelParser = require("../../../middleware/customerExcelParser");
 const multer = require("multer");
+const path = require("path");
 
 const {
     createCustomer,
@@ -32,7 +33,9 @@ router.get("/store-customer/search/:store_id/:storeProfile_id", common.tokenmidd
 
 
 // Excel upload route
-const upload = multer({ dest: "../../../assets/uploadCustomerExcel" });
+const upload = multer({
+  dest: path.join(__dirname, "../../assets/uploadCustomerExcel")
+});
 router.post("/store-customer/upload-excel", common.tokenmiddleware, upload.single("excelFile"), customerExcelParser, uploadExcelData);
 router.get("/store-customer/export-excel/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(exportCustomersToExcel));
 

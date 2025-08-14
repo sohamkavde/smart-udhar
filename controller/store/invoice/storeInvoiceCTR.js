@@ -36,8 +36,6 @@ const createInvoice = async (req, res) => {
       }
     }
 
-   
-
     if (invoiceData.paymentMode === "cash" && invoiceData.milestones) {
       return res.status(400).json({
         status: "error",
@@ -72,12 +70,12 @@ const createInvoice = async (req, res) => {
       }
     }
 
-     let i = 0;
-    for (const arrProduct of arrProductDb) { 
-        arrProduct.quantity -= productArr[i++].qty;
-        await arrProduct.save(); 
+    let i = 0;
+    for (const arrProduct of arrProductDb) {
+      arrProduct.quantity -= productArr[i++].qty;
+      await arrProduct.save();
     }
-    
+
     return res.status(201).json({
       status: "success",
       message: "Invoice created successfully",
@@ -571,6 +569,114 @@ const exportInvoicesPDF = async (req, res) => {
   }
 };
 
+// Dashboard Export
+const dashboardExport = async (req, res) => {
+  try {
+    const store_id = req.params.store_id;
+    const storeProfile_id = req.params.storeProfile_id;
+    // Define the match condition based on filterType
+    let matchCondition = {};
+
+     // Get year & month from query params (or body/params depending on your design)
+    const { year, month } = req.query; // e.g. ?year=2025&month=2
+
+    if (!year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both year and month in query parameters"
+      });
+    }
+
+    // Ensure numeric values
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+
+    // Get start and end of that month
+    const startOfMonth = moment(`${yearNum}-${monthNum}`, "YYYY-M")
+      .startOf("month")
+      .toDate();
+
+    const endOfMonth = moment(`${yearNum}-${monthNum}`, "YYYY-M")
+      .endOf("month")
+      .toDate();
+
+    matchCondition = {
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+      store_id,
+      storeProfile_id,
+    };
+
+    const invoices = await Invoice.find(matchCondition).lean();
+    let totalSum = 0;
+    let paidSum = 0;
+    let pendingSum = 0;
+    let purchaseArr = [];
+    let collectionArr = [];
+
+    invoices.map((invoice) => {
+      totalSum += invoice.total || 0;
+      const status = invoice.paymentMode;
+      let checkPaid = true;
+
+
+      if (status && status.toLowerCase() === "cash") {
+        paidSum += invoice.total || 0;
+      } else if (status && status.toLowerCase() === "debt") {
+        const milestones = invoice.milestones || [];
+        if (!milestones || milestones.length === 0) {
+          res
+            .status(404)
+            .json({ status: "error", message: "Milestones not found" });
+        }
+        milestones.forEach((milestone) => {
+          if (milestone.status && milestone.status.toLowerCase() === "paid") {
+            paidSum += milestone.amount || 0;
+          }
+          if (milestone.status && milestone.status.toLowerCase() !== "paid") {
+            pendingSum += milestone.amount || 0;
+            checkPaid = false;
+          }
+        });
+      }
+
+      purchaseArr.push({
+        purchaseDate: moment(invoice.createdAt).format("DD MMM YYYY"),
+        purchaseType: "purchase",
+        purchaseTotalAmount: invoice.total || 0,
+        purchaseInvoiceNumber: "INV-" + invoice._id,
+        purchaseStatus: checkPaid ? "Paid" : "Pending",
+      });
+
+      collectionArr.push({
+        ClientName : invoice.name || "Unknown",
+        collectionDueDate: moment(invoice.milestones.dueDate).format("DD MMM YYYY")|| "N/A",
+        collectionTotalAmount: invoice.total || 0,  
+        clientPhone: invoice.phone || "N/A",
+        collectionType: "collection",
+        status:invoice.milestones.status || "N/A",
+        id: invoice._id, 
+      });
+
+    });
+    res.status(200).json({
+      status: "success",
+      message: "Dashboard data fetched successfully",
+      totalInvoice: invoices.length,
+      totalSum: totalSum,
+      paidSum: paidSum,
+      pendingSum: pendingSum,
+      purchaseArrlength: purchaseArr.length,
+      purchaseArr: purchaseArr,
+      collectionArrlength: collectionArr.length,
+      collectionArr: collectionArr,
+      data: invoices,
+    });
+  } catch (error) {
+    console.error("Dashboard Export Error:", error);
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createInvoice,
   updateInvoice,
@@ -581,4 +687,5 @@ module.exports = {
   paidMilestones,
   filterInvoices,
   exportInvoicesPDF,
+  dashboardExport,
 };

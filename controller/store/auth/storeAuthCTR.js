@@ -40,6 +40,7 @@ const storeRegistration = async (req, res) => {
     return res.status(201).json({
       status: "success",
       message: "Store Registration Successful",
+      mobile_otp:mobile_otp,
       store: { id: newStore._id, email: newStore.email },
     });
   } catch (error) {
@@ -140,12 +141,12 @@ const storeLoginOTP = async (req, res) => {
         .status(404)
         .json({ status: "failed", message: "Invalid Mobile and roles" });
     }
-
-    if (!store.is_verified) {
-      return res
-        .status(401)
-        .json({ status: "failed", message: "Your account is not verified" });
-    }
+    // no need to verify if already verified because we are sending otp for login each time and generating tokens
+    // if (!store.is_verified) {
+    //   return res
+    //     .status(401)
+    //     .json({ status: "failed", message: "Your account is not verified" });
+    // }
 
     
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -159,6 +160,7 @@ const storeLoginOTP = async (req, res) => {
 
     return res.status(201).json({
         status: "success",
+        mobile_otp:otp,
         message: "OTP Sent to mobile number"        
     });
 

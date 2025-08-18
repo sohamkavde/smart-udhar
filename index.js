@@ -41,12 +41,12 @@ app.get("/", (req, res) => res.send("Express on Vercel"));
 
 // Load Routes
 app.use(storeRoutes)
-// app.use(storeProfileRoutes)
-// app.use(storeCustomerRoutes)
-// app.use(storeProductRoutes)
-// app.use(storeInvoiceRoutes)
-// app.use(storeStaffRoutes)
-// app.use(storeExpenseRoutes)
+app.use(storeProfileRoutes)
+app.use(storeCustomerRoutes)
+app.use(storeProductRoutes)
+app.use(storeInvoiceRoutes)
+app.use(storeStaffRoutes)
+app.use(storeExpenseRoutes)
 
 
 const PORT = process.env.PORT || 5000;

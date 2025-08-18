@@ -1,70 +1,117 @@
 const path = require("path");
 
-const Invoice = require(path.join(__dirname, "../../../models/store/invoice/invoice"));
-const Profile = require(path.join(__dirname, "../../../models/store/profile/profile"));
-const Product = require(path.join(__dirname, "../../../models/store/product/product"));
-const Customer = require(path.join(__dirname, "../../../models/store/customer/customer"));
+const Invoice = require(path.join(
+  __dirname,
+  "../../../models/store/invoice/invoice"
+));
+const Profile = require(path.join(
+  __dirname,
+  "../../../models/store/profile/profile"
+));
+const Product = require(path.join(
+  __dirname,
+  "../../../models/store/product/product"
+));
+const Customer = require(path.join(
+  __dirname,
+  "../../../models/store/customer/customer"
+));
 
 const moment = require("moment-timezone");
 const PDFDocument = require("pdfkit-table");
 
 // Create Invoice
+const mongoose = require("mongoose"); 
+
 const createInvoice = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const invoiceData = req.body;
-    // if paymentMethod is cash then we can not allow milestones as it is part of debt recovery
 
-    const CustomerDetails = await Customer.findById(invoiceData.customerId);
+    // Validate Customer
+    const CustomerDetails = await Customer.findById(invoiceData.customerId).session(session);
     if (!CustomerDetails) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         status: "error",
         message: "Customer does not exist",
       });
     }
+
     const productArr = invoiceData.products;
 
-    const arrProductDb = [];
+    // Aggregate requested qty per productId
+    const productQtyMap = {};
     for (const product of productArr) {
-      if (product.productId && product.productId.trim()) {
-        const productFromDb = await Product.findById({
-          _id: product.productId,
-        });
-
-        if (!productFromDb) {
-          return res.status(400).json({
-            status: "error",
-            message: `Product with ID ${product.productId} does not exist`,
-          });
-        }
-
-        if (productFromDb.quantity < product.quantity) {
-          return res.status(400).json({
-            status: "error",
-            message: `Insufficient stock for product ${productFromDb.name}. Available: ${productFromDb.quantity}, Requested: ${product.quantity}`,
-          });
-        }
-        arrProductDb.push(productFromDb);
-      }
+      if (!product.productId || !product.productId.trim()) continue;
+      productQtyMap[product.productId] =
+        (productQtyMap[product.productId] || 0) + Number(product.qty);
     }
 
+    // Validate stock
+    const arrProductDb = [];
+    for (const [productId, totalRequestedQty] of Object.entries(productQtyMap)) {
+      const productFromDb = await Product.findById(productId).session(session);
+
+      if (!productFromDb) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          status: "error",
+          message: `Product with ID ${productId} does not exist`,
+        });
+      }
+
+      if (productFromDb.quantity < totalRequestedQty) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          status: "error",
+          message: `Insufficient stock for product ${productFromDb.name}. Available: ${productFromDb.quantity}, Requested: ${totalRequestedQty}`,
+        });
+      }
+
+      arrProductDb.push({
+        product: productFromDb,
+        requestedQty: totalRequestedQty,
+      });
+    }
+
+    // Payment checks
     if (invoiceData.paymentMode === "cash" && invoiceData.milestones) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         status: "error",
         message: "Milestones are not allowed for cash payments",
       });
     }
 
+    if (
+      invoiceData.paymentMode === "debt" &&
+      (!invoiceData.milestones || invoiceData.milestones.length === 0)
+    ) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        status: "error",
+        message: "Milestones are required for debt payments",
+      });
+    }
+
     // 1. Create invoice
-    const newInvoice = await Invoice.create(invoiceData);
+    const [newInvoice] = await Invoice.create([invoiceData], { session });
 
     // 2. If payment mode is cash, update collections
     if (invoiceData.paymentMode === "cash") {
-      const storeProfile = await Profile.findById(invoiceData.storeProfile_id);
+      const storeProfile = await Profile.findById(invoiceData.storeProfile_id).session(session);
 
       if (storeProfile) {
         const today = moment().tz("Asia/Kolkata").startOf("day");
 
-        // Reset if last reset was before today
         if (
           !storeProfile.last_reset ||
           moment(storeProfile.last_reset).isBefore(today)
@@ -73,19 +120,22 @@ const createInvoice = async (req, res) => {
           storeProfile.last_reset = today.toDate();
         }
 
-        // Add today's collection
         storeProfile.today_collection += Number(invoiceData.total || 0);
         storeProfile.total_collection += Number(invoiceData.total || 0);
 
-        await storeProfile.save();
+        await storeProfile.save({ session });
       }
     }
 
-    let i = 0;
-    for (const arrProduct of arrProductDb) {
-      arrProduct.quantity -= productArr[i++].qty;
-      await arrProduct.save();
+    // 3. Deduct stock
+    for (const { product, requestedQty } of arrProductDb) {
+      product.quantity -= requestedQty;
+      await product.save({ session });
     }
+
+    // ✅ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(201).json({
       status: "success",
@@ -93,6 +143,8 @@ const createInvoice = async (req, res) => {
       data: newInvoice,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Create Invoice Error:", error);
     return res
       .status(500)
@@ -588,13 +640,13 @@ const dashboardExport = async (req, res) => {
     // Define the match condition based on filterType
     let matchCondition = {};
 
-     // Get year & month from query params (or body/params depending on your design)
+    // Get year & month from query params (or body/params depending on your design)
     const { year, month } = req.query; // e.g. ?year=2025&month=2
 
     if (!year || !month) {
       return res.status(400).json({
         success: false,
-        message: "Please provide both year and month in query parameters"
+        message: "Please provide both year and month in query parameters",
       });
     }
 
@@ -629,7 +681,6 @@ const dashboardExport = async (req, res) => {
       const status = invoice.paymentMode;
       let checkPaid = true;
 
-
       if (status && status.toLowerCase() === "cash") {
         paidSum += invoice.total || 0;
       } else if (status && status.toLowerCase() === "debt") {
@@ -654,20 +705,25 @@ const dashboardExport = async (req, res) => {
         purchaseDate: moment(invoice.createdAt).format("DD MMM YYYY"),
         purchaseType: "purchase",
         purchaseTotalAmount: invoice.total || 0,
-        purchaseInvoiceNumber: "INV-" + invoice._id,
+        purchaseInvoiceNumber: invoice.invoiceId,
         purchaseStatus: checkPaid ? "Paid" : "Pending",
       });
-
-      collectionArr.push({
-        ClientName : invoice.name || "Unknown",
-        collectionDueDate: moment(invoice.milestones.dueDate).format("DD MMM YYYY")|| "N/A",
-        collectionTotalAmount: invoice.total || 0,  
-        clientPhone: invoice.phone || "N/A",
-        collectionType: "collection",
-        status:invoice.milestones.status || "N/A",
-        id: invoice._id, 
-      });
-
+      if (
+        invoice.paymentStatus &&
+        invoice.paymentStatus.toLowerCase() !== "paid"
+      ) {
+        collectionArr.push({
+          ClientName: invoice.name || "Unknown",
+          collectionDueDate: invoice.milestones.dueDate
+            ? moment(invoice.milestones.dueDate).format("DD MMM YYYY")
+            : "N/A",
+          collectionTotalAmount: invoice.total || 0,
+          clientPhone: invoice.phone || "N/A",
+          collectionType: "collection",
+          status: invoice.milestones.status ? invoice.milestones.status : "N/A",
+          id: invoice._id,
+        });
+      }
     });
     res.status(200).json({
       status: "success",

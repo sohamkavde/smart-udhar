@@ -3,6 +3,7 @@ const path = require("path");
 const Invoice = require(path.join(__dirname, "../../../models/store/invoice/invoice"));
 const Profile = require(path.join(__dirname, "../../../models/store/profile/profile"));
 const Product = require(path.join(__dirname, "../../../models/store/product/product"));
+const Customer = require(path.join(__dirname, "../../../models/store/customer/customer"));
 
 const moment = require("moment-timezone");
 const PDFDocument = require("pdfkit-table");
@@ -13,6 +14,13 @@ const createInvoice = async (req, res) => {
     const invoiceData = req.body;
     // if paymentMethod is cash then we can not allow milestones as it is part of debt recovery
 
+    const CustomerDetails = await Customer.findById(invoiceData.customerId);
+    if (!CustomerDetails) {
+      return res.status(400).json({
+        status: "error",
+        message: "Customer does not exist",
+      });
+    }
     const productArr = invoiceData.products;
 
     const arrProductDb = [];

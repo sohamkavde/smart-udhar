@@ -79,9 +79,8 @@ const createInvoice = async (req, res) => {
         });
       }
 
-      console.log(
-        `Product ${productFromDb.name} OK: ${productFromDb.quantity} available, ${totalRequestedQty} requested, min_quantity ${productFromDb.min_quantity}`
-      );
+     
+      
 
       // ✅ Check low stock alert
       const remainingQty = productFromDb.quantity - totalRequestedQty;
@@ -537,7 +536,10 @@ const filterInvoices = async (req, res) => {
 
       case "paid":
         matchCondition = {
-          "milestones.status": "Paid",
+          $or: [
+            { "milestones.status": "Paid" },
+            { "paymentStatus": "Paid" },
+          ],
         };
         break;
 
@@ -547,6 +549,7 @@ const filterInvoices = async (req, res) => {
             $gte: startOfWeek.toDate(),
             $lte: endOfWeek.toDate(),
           },
+          
         };
         break;
 
@@ -595,7 +598,12 @@ const exportInvoicesPDF = async (req, res) => {
         };
         break;
       case "paid":
-        matchCondition = { "milestones.status": "Paid" };
+        matchCondition = {
+           $or: [
+            { "milestones.status": "Paid" },
+            { "paymentStatus": "Paid" },
+          ],
+         };
         break;
       case "thisWeek":
         matchCondition = {

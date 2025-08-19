@@ -1,3 +1,5 @@
+// Create Invoice
+const mongoose = require("mongoose");
 const path = require("path");
 
 const Invoice = require(path.join(
@@ -12,6 +14,10 @@ const Product = require(path.join(
   __dirname,
   "../../../models/store/product/product"
 ));
+const Lowstock = require(path.join(
+  __dirname,
+  "../../../models/store/product/lowStockAlert"
+));
 const Customer = require(path.join(
   __dirname,
   "../../../models/store/customer/customer"
@@ -20,9 +26,6 @@ const Customer = require(path.join(
 const moment = require("moment-timezone");
 const PDFDocument = require("pdfkit-table");
 
-// Create Invoice
-const mongoose = require("mongoose"); 
-
 const createInvoice = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -30,35 +33,38 @@ const createInvoice = async (req, res) => {
   try {
     const invoiceData = req.body;
 
-    // Validate Customer
-    const CustomerDetails = await Customer.findById(invoiceData.customerId).session(session);
+    // ✅ Validate Customer
+    const CustomerDetails = await Customer.findById(
+      invoiceData.customerId
+    ).session(session);
     if (!CustomerDetails) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         status: "error",
         message: "Customer does not exist",
       });
     }
 
-    const productArr = invoiceData.products;
+    const productArr = invoiceData.products || [];
 
-    // Aggregate requested qty per productId
+    // ✅ Aggregate requested qty per productId
     const productQtyMap = {};
     for (const product of productArr) {
-      if (!product.productId || !product.productId.trim()) continue;
+      if (!product.productId) continue;
       productQtyMap[product.productId] =
         (productQtyMap[product.productId] || 0) + Number(product.qty);
     }
 
-    // Validate stock
     const arrProductDb = [];
-    for (const [productId, totalRequestedQty] of Object.entries(productQtyMap)) {
+
+    // ✅ Validate stock for each product
+    for (const [productId, totalRequestedQty] of Object.entries(
+      productQtyMap
+    )) {
       const productFromDb = await Product.findById(productId).session(session);
 
       if (!productFromDb) {
         await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           status: "error",
           message: `Product with ID ${productId} does not exist`,
@@ -67,11 +73,42 @@ const createInvoice = async (req, res) => {
 
       if (productFromDb.quantity < totalRequestedQty) {
         await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           status: "error",
           message: `Insufficient stock for product ${productFromDb.name}. Available: ${productFromDb.quantity}, Requested: ${totalRequestedQty}`,
         });
+      }
+
+      console.log(
+        `Product ${productFromDb.name} OK: ${productFromDb.quantity} available, ${totalRequestedQty} requested, min_quantity ${productFromDb.min_quantity}`
+      );
+
+      // ✅ Check low stock alert
+      const remainingQty = productFromDb.quantity - totalRequestedQty;
+      if (remainingQty <= productFromDb.min_quantity) {
+        let lowStockAlert = await Lowstock.findOne({
+          productId: productFromDb._id,
+          store_id: invoiceData.store_id,
+          storeProfile_id: invoiceData.storeProfile_id,
+        }).session(session);
+
+        if (!lowStockAlert) {
+          await Lowstock.create(
+            [
+              {
+                productId: productFromDb._id,
+                productName: productFromDb.name,
+                leftProductQty: remainingQty,
+                store_id: invoiceData.store_id,
+                storeProfile_id: invoiceData.storeProfile_id,
+              },
+            ],
+            { session }
+          );
+        } else {
+          lowStockAlert.leftProductQty = remainingQty;
+          await lowStockAlert.save({ session });
+        }
       }
 
       arrProductDb.push({
@@ -80,10 +117,9 @@ const createInvoice = async (req, res) => {
       });
     }
 
-    // Payment checks
+    // ✅ Payment checks
     if (invoiceData.paymentMode === "cash" && invoiceData.milestones) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         status: "error",
         message: "Milestones are not allowed for cash payments",
@@ -95,19 +131,20 @@ const createInvoice = async (req, res) => {
       (!invoiceData.milestones || invoiceData.milestones.length === 0)
     ) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         status: "error",
         message: "Milestones are required for debt payments",
       });
     }
 
-    // 1. Create invoice
+    // ✅ 1. Create invoice
     const [newInvoice] = await Invoice.create([invoiceData], { session });
 
-    // 2. If payment mode is cash, update collections
+    // ✅ 2. If cash, update store collections
     if (invoiceData.paymentMode === "cash") {
-      const storeProfile = await Profile.findById(invoiceData.storeProfile_id).session(session);
+      const storeProfile = await Profile.findById(
+        invoiceData.storeProfile_id
+      ).session(session);
 
       if (storeProfile) {
         const today = moment().tz("Asia/Kolkata").startOf("day");
@@ -127,15 +164,25 @@ const createInvoice = async (req, res) => {
       }
     }
 
-    // 3. Deduct stock
+    // ✅ 3. Deduct stock (atomic update)
     for (const { product, requestedQty } of arrProductDb) {
-      product.quantity -= requestedQty;
-      await product.save({ session });
+      const updateResult = await Product.updateOne(
+        { _id: product._id, quantity: { $gte: requestedQty } },
+        { $inc: { quantity: -requestedQty } },
+        { session }
+      );
+
+      if (updateResult.matchedCount === 0) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          status: "error",
+          message: `Failed to update stock for product ${product.name}`,
+        });
+      }
     }
 
     // ✅ Commit transaction
     await session.commitTransaction();
-    session.endSession();
 
     return res.status(201).json({
       status: "success",
@@ -144,11 +191,13 @@ const createInvoice = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     console.error("Create Invoice Error:", error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Internal Server Error" });
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  } finally {
+    session.endSession();
   }
 };
 

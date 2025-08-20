@@ -3,9 +3,11 @@ const path = require("path");
 const StoreBankDetail = require(path.join(__dirname,"../../../models/store/settings/settings"));
 
 // Create Bank Detail
-exports.createBankDetail = async (req, res) => {
+const createBankDetail = async (req, res) => {
   try {
     const bankDetail = new StoreBankDetail(req.body);
+    console.log("Bank Detail Data:", bankDetail);
+    
     if(!bankDetail.store_id || !bankDetail.storeProfile_id) {
       return res.status(400).json({
         status: "error",
@@ -28,7 +30,7 @@ exports.createBankDetail = async (req, res) => {
 };
 
 // Find Bank Detail by ID
-exports.findBankDetailById = async (req, res) => {
+const findBankDetailById = async (req, res) => {
   try {
     const bankDetail = await StoreBankDetail.findById(req.params.id);
 
@@ -51,30 +53,10 @@ exports.findBankDetailById = async (req, res) => {
   }
 };
 
-// Find all Bank Details by Store ID
-exports.findAllBankDetails = async (req, res) => {
-  try {
-    const bankDetails = await StoreBankDetail.find({
-      _id: req.params.id,
-      store_id: req.params.store_id,
-      storeProfile_id: req.params.storeProfile_id,
-    });
-
-    res.status(200).json({
-      status: "success",
-      count: bankDetails.length,
-      data: bankDetails,
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: error.message,
-    });
-  }
-};
+ 
 
 // Update Bank Detail by ID
-exports.updateBankDetail = async (req, res) => {
+const updateBankDetail = async (req, res) => {
   try {
     const bankDetail = await StoreBankDetail.findByIdAndUpdate(
       req.params.id,
@@ -103,7 +85,7 @@ exports.updateBankDetail = async (req, res) => {
 };
 
 // Delete Bank Detail by ID
-exports.deleteBankDetailById = async (req, res) => {
+const deleteBankDetailById = async (req, res) => {
   try {
     const bankDetail = await StoreBankDetail.findByIdAndDelete(req.params.id);
 
@@ -124,4 +106,11 @@ exports.deleteBankDetailById = async (req, res) => {
       message: error.message,
     });
   }
+};
+
+module.exports = {
+  createBankDetail,
+  findBankDetailById,  
+  updateBankDetail,
+  deleteBankDetailById,
 };

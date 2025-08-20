@@ -14,6 +14,9 @@ const storeProductRoutes   = require('./routes/store/product/productRoutes');
 const storeInvoiceRoutes   = require('./routes/store/invoice/invoiceRoute');
 const storeStaffRoutes   = require('./routes/store/staff/staffRoutes');
 const storeExpenseRoutes   = require('./routes/store/expense/expenseRoutes');
+const storeSettingsRoutes   = require('./routes/store/settings/settingsRoutes');
+const storegeneralSettingsRoutes   = require('./routes/store/settings/generalSettingRoutes');
+const storeInvoiceTemplateSettingsRoutes   = require('./routes/store/settings/invoiceCustomisation');
 
 // const userRoutes   = require('./routes/userRoutes');
 // const storeRoutes   = require('./routes/storeRoutes');
@@ -47,6 +50,9 @@ app.use(storeProductRoutes)
 app.use(storeInvoiceRoutes)
 app.use(storeStaffRoutes)
 app.use(storeExpenseRoutes)
+app.use(storeSettingsRoutes)
+app.use(storegeneralSettingsRoutes)
+app.use(storeInvoiceTemplateSettingsRoutes)
 
 
 const PORT = process.env.PORT || 5000;

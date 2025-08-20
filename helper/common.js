@@ -13,7 +13,7 @@ exports.tokenmiddleware = (req, res, next) => {
     } else {
         let payload = module.exports.checktoken(token)
         if (payload) {
-            req.userId = payload;           
+            req.store_id = payload;           
         }
         if (payload == null || payload == undefined || !payload) {
             return res.status(401).send('unauthorized')

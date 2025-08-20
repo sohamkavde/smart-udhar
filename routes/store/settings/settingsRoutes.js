@@ -4,11 +4,10 @@ const asyncHandler = require("../../../middleware/async");
 const common = require("../../../helper/common");
 
 const {
-  createPaymentSetup,
-  updatePaymentSetup,
-  findPaymentSetupById,
-  findAllPaymentSetups,
-  deletePaymentSetupById,
+    createBankDetail,
+  findBankDetailById,  
+  updateBankDetail,
+  deleteBankDetailById,
 } = require("../../../controller/store/settings/settingsCTR");
 
 /* GET base route */
@@ -20,35 +19,30 @@ router.get("/", function (req, res) {
 router.post(
   "/payment-setup/create",
   common.tokenmiddleware,
-  asyncHandler(createPaymentSetup)
+  asyncHandler(createBankDetail)
 );
 
 // ✅ Get Payment Setup by ID
 router.get(
   "/payment-setup/findBy-id/:id",
   common.tokenmiddleware,
-  asyncHandler(findPaymentSetupById)
+  asyncHandler(findBankDetailById)
 );
 
-// ✅ Get all Payment Setups for a store
-router.get(
-  "/payment-setup/find-all/:id/:store_id/:storeProfile_id",
-  common.tokenmiddleware,
-  asyncHandler(findAllPaymentSetups)
-);
+ 
 
 // ✅ Delete Payment Setup
 router.delete(
   "/payment-setup/delete/:id",
   common.tokenmiddleware,
-  asyncHandler(deletePaymentSetupById)
+  asyncHandler(deleteBankDetailById)
 );
 
 // ✅ Update Payment Setup
 router.put(
   "/payment-setup/update/:id",
   common.tokenmiddleware,
-  asyncHandler(updatePaymentSetup)
+  asyncHandler(updateBankDetail)
 );
 
 module.exports = router;

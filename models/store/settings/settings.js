@@ -7,8 +7,8 @@ const paymentSetupSchema = new mongoose.Schema(
     accountNumber: { type: String, required: true, trim: true },
     ifscCode: { type: String, required: true, trim: true },
     bankName: { type: String, required: true, trim: true },
-    storeId: { type: mongoose.Schema.Types.ObjectId, ref: "store", required: true },
-    storeProfileId: { type: mongoose.Schema.Types.ObjectId, ref: "storeProfile", required: true },
+    store_id: { type: mongoose.Schema.Types.ObjectId, ref: "store", required: true },
+    storeProfile_id: { type: mongoose.Schema.Types.ObjectId, ref: "storeProfile", required: true },
   },
   { timestamps: true }
 );

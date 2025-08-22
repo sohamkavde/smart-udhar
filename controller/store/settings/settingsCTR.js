@@ -5,8 +5,7 @@ const StoreBankDetail = require(path.join(__dirname,"../../../models/store/setti
 // Create Bank Detail
 const createBankDetail = async (req, res) => {
   try {
-    const bankDetail = new StoreBankDetail(req.body);
-    console.log("Bank Detail Data:", bankDetail);
+    const bankDetail = new StoreBankDetail(req.body); 
     
     if(!bankDetail.store_id || !bankDetail.storeProfile_id) {
       return res.status(400).json({

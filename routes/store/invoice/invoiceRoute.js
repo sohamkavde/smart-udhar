@@ -14,6 +14,7 @@ const {
   filterInvoices,
   exportInvoicesPDF,
   dashboardExport,
+  updateLowStockAlert,
 } = require("../../../controller/store/invoice/storeInvoiceCTR"); // Make sure this path is correct
 
 // Base route
@@ -38,6 +39,10 @@ router.put("/store-customer-invoice/paid-milestone/:id", common.tokenmiddleware,
 router.get("/store-invoice/filter", common.tokenmiddleware, asyncHandler(filterInvoices));
 router.get("/store-invoice/export-filter-data", common.tokenmiddleware, asyncHandler(exportInvoicesPDF));
 
+//updateLowStockAlert
+router.post("/store-invoice/update-low-stock-alert", common.tokenmiddleware, asyncHandler(updateLowStockAlert));
+
+// Dashboard 
 router.get("/store-invoice/dashboard-export/:store_id/:storeProfile_id", common.tokenmiddleware, asyncHandler(dashboardExport));
 
 module.exports = router;

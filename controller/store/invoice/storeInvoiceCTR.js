@@ -79,9 +79,6 @@ const createInvoice = async (req, res) => {
         });
       }
 
-     
-      
-
       // ✅ Check low stock alert
       const remainingQty = productFromDb.quantity - totalRequestedQty;
       if (remainingQty <= productFromDb.min_quantity) {
@@ -536,10 +533,7 @@ const filterInvoices = async (req, res) => {
 
       case "paid":
         matchCondition = {
-          $or: [
-            { "milestones.status": "Paid" },
-            { "paymentStatus": "Paid" },
-          ],
+          $or: [{ "milestones.status": "Paid" }, { paymentStatus: "Paid" }],
         };
         break;
 
@@ -549,7 +543,6 @@ const filterInvoices = async (req, res) => {
             $gte: startOfWeek.toDate(),
             $lte: endOfWeek.toDate(),
           },
-          
         };
         break;
 
@@ -599,11 +592,8 @@ const exportInvoicesPDF = async (req, res) => {
         break;
       case "paid":
         matchCondition = {
-           $or: [
-            { "milestones.status": "Paid" },
-            { "paymentStatus": "Paid" },
-          ],
-         };
+          $or: [{ "milestones.status": "Paid" }, { paymentStatus: "Paid" }],
+        };
         break;
       case "thisWeek":
         matchCondition = {
@@ -635,9 +625,16 @@ const exportInvoicesPDF = async (req, res) => {
     invoices.forEach((invoice) => {
       const milestones = invoice.milestones || [];
 
-      milestones.forEach((milestone, index) => {
-        const nextMilestone = milestones[index + 1] || null; // next in queue
+      for (let index = 0; index < milestones.length; index++) {
+        const milestone = milestones[index];
+        const nextMilestone = milestones[index + 1] || null;
 
+        // Skip paid milestones
+        if (milestone.status && milestone.status.toLowerCase() === "paid") {
+          continue;
+        }
+
+        // Push only the first unpaid milestone
         tableRows.push([
           invoice.name || "-",
           invoice.phone || "-",
@@ -650,14 +647,16 @@ const exportInvoicesPDF = async (req, res) => {
                 nextMilestone.dueDate
               ).format("DD MMM")}`
             : "-",
-          milestone.status.toUpperCase() == "Paid".toUpperCase()
+          milestone.status?.toLowerCase() === "paid"
             ? "Paid"
             : filterType
             ? filterType.charAt(0).toUpperCase() +
               filterType.slice(1).toLowerCase()
             : "All",
         ]);
-      });
+
+        break; // stop after first unpaid milestone
+      }
     });
 
     // Table definition
@@ -801,6 +800,48 @@ const dashboardExport = async (req, res) => {
   }
 };
 
+
+// ✅ Update Low Stock Alert
+const updateLowStockAlert = async (req, res) => {
+  try {
+    const { store_id, storeProfile_id, productId, updateData } = req.body;
+
+    if (!store_id || !storeProfile_id || !productId) {
+      return res.status(400).json({
+        success: false,
+        message: "store_id, storeProfile_id and productId are required",
+      });
+    }
+
+    const alert = await Lowstock.findOneAndUpdate(
+      { store_id, storeProfile_id, productId },
+      { $set: updateData }, // updateData should be an object like { markAsRead: true, leftProductQty: 5 }
+      { new: true } // return updated document
+    );
+
+    if (!alert) {
+      return res.status(404).json({
+        success: false,
+        message: "Low stock alert not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Low stock alert updated successfully",
+      data: alert,
+    });
+  } catch (error) {
+    console.error("Error updating low stock alert:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createInvoice,
   updateInvoice,
@@ -812,4 +853,5 @@ module.exports = {
   filterInvoices,
   exportInvoicesPDF,
   dashboardExport,
+  updateLowStockAlert
 };

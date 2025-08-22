@@ -27,6 +27,10 @@ const lowStockAlertSchema = new mongoose.Schema(
       ref: "StoreProfile",
       required: true,
     },
+    markAsRead: {
+      type: Boolean,
+      default: false, // Indicates whether the alert has been acknowledged
+    },
   },
   { timestamps: true }
 );
